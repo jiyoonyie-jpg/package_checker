@@ -16,7 +16,6 @@ from utils.analyzer import (
 from utils.designer import generate_package_design, refine_design_description
 from utils.reporter import export_to_excel
 
-# ── 페이지 설정 ──────────────────────────────────────────
 st.set_page_config(
     page_title="패키지 AI 검수 & 디자인",
     page_icon="🎨",
@@ -24,37 +23,47 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── CSS ─────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
 html,body,[class*="css"]{font-family:'Noto Sans KR',sans-serif}
+
 .main-header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
-  padding:1.5rem 2rem;border-radius:14px;color:white;margin-bottom:1.5rem}
-.main-header h1{font-size:1.6rem;font-weight:700;margin:0 0 .3rem}
-.main-header p{font-size:.9rem;opacity:.8;margin:0}
+  padding:1.4rem 2rem;border-radius:14px;color:white;margin-bottom:1.5rem}
+.main-header h1{font-size:1.5rem;font-weight:700;margin:0 0 .3rem}
+.main-header p{font-size:.85rem;opacity:.8;margin:0}
+
+/* 사이드바 메뉴 */
+.nav-btn {
+    width:100%;text-align:left;padding:.75rem 1rem;border-radius:10px;
+    border:none;cursor:pointer;font-size:.95rem;font-weight:500;
+    margin-bottom:.3rem;transition:background .15s;
+}
+.nav-btn-active{background:#0f3460;color:white}
+.nav-btn-inactive{background:transparent;color:#444}
+.nav-btn-inactive:hover{background:#f0f2f6}
+
 .score-card{padding:1.2rem;border-radius:12px;text-align:center;border:1px solid}
 .score-high{background:#e8f5e9;border-color:#4caf50}
 .score-mid{background:#fff8e1;border-color:#ff9800}
 .score-low{background:#ffebee;border-color:#f44336}
 .score-num{font-size:3rem;font-weight:700;line-height:1}
 .score-label{font-size:.8rem;color:#666;margin-top:.2rem}
+
 .field-row{display:flex;align-items:flex-start;gap:8px;padding:.5rem .8rem;
   border-radius:8px;margin-bottom:.3rem;font-size:.88rem}
-.field-ok{background:#f1f8e9}
-.field-fail{background:#fce4ec}
+.field-ok{background:#f1f8e9}.field-fail{background:#fce4ec}
 .field-badge{width:20px;height:20px;border-radius:50%;display:inline-flex;
-  align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;margin-top:2px}
-.badge-ok{background:#4caf50;color:white}
-.badge-fail{background:#f44336;color:white}
-.violation-card{padding:.7rem 1rem;border-radius:8px;margin-bottom:.4rem;border-left:4px solid;font-size:.88rem}
+  align-items:center;justify-content:center;font-size:.7rem;font-weight:700;
+  flex-shrink:0;margin-top:2px}
+.badge-ok{background:#4caf50;color:white}.badge-fail{background:#f44336;color:white}
+
+.violation-card{padding:.7rem 1rem;border-radius:8px;margin-bottom:.4rem;
+  border-left:4px solid;font-size:.88rem}
 .v-high{background:#ffebee;border-color:#f44336}
 .v-medium{background:#fff8e1;border-color:#ff9800}
 .v-low{background:#f3f9e7;border-color:#8bc34a}
 .v-warn{background:#e3f2fd;border-color:#2196f3}
-.design-card{background:white;border:1px solid #e0e0e0;border-radius:14px;padding:1.2rem;margin-bottom:1rem}
-.prompt-chip{display:inline-block;background:#f0f4ff;border:1px solid #c5cae9;border-radius:20px;
-  padding:.25rem .75rem;font-size:.8rem;color:#3949ab;cursor:pointer;margin:.2rem}
 </style>
 """, unsafe_allow_html=True)
 
@@ -66,55 +75,77 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── API 키 확인 ──────────────────────────────────────────
-api_key = os.environ.get("GEMINI_API_KEY", "")
-if not api_key:
-    st.warning("⚠️ GEMINI_API_KEY 환경변수가 설정되지 않았습니다. 사이드바에서 입력해주세요.")
-
-# ── 사이드바 ─────────────────────────────────────────────
+# ── 사이드바: API 키 + 메뉴 네비게이션 ──────────────────
 with st.sidebar:
     st.markdown("### 🔑 API 설정")
+    api_key = os.environ.get("GEMINI_API_KEY", "")
     input_key = st.text_input("Gemini API Key", value=api_key, type="password",
                               help="발급: aistudio.google.com")
     if input_key:
         os.environ["GEMINI_API_KEY"] = input_key
 
     st.markdown("---")
-    st.markdown("### ⚙️ 검수 설정")
-    export_type = st.selectbox("수출/내수 구분",
-        ["내수용 (국내)", "수출용 - 미국 FDA", "수출용 - 유럽 EU", "수출용 - 중국"])
-    check_barcode = st.checkbox("바코드 자동 감지", value=True)
-    extra_context = st.text_area("추가 검수 지시사항", height=80,
-        placeholder="예: 유기농 인증 제품입니다.")
+    st.markdown("### 📌 메뉴")
 
-    st.markdown("---")
-    st.markdown("### 📋 검수 항목")
-    st.markdown("""
-    ✅ 제품명 / 식품유형  ✅ 원재료명
-    ✅ 영양성분표  ✅ 유통기한
-    ✅ 알레르기  ✅ 원산지
-    ✅ 보관방법  ✅ 바코드
-    """)
+    if "menu" not in st.session_state:
+        st.session_state["menu"] = "검수"
 
-# ── 탭 ──────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["🔍 표기사항 검수", "🎨 패키지 디자인 생성", "📖 검수 기준 안내"])
+    menus = [
+        ("🔍", "표기사항 검수"),
+        ("🎨", "패키지 디자인 생성"),
+        ("📖", "검수 기준 안내"),
+    ]
+    for icon, label in menus:
+        is_active = st.session_state["menu"] == label
+        if st.button(f"{icon}  {label}", key=f"nav_{label}",
+                     use_container_width=True,
+                     type="primary" if is_active else "secondary"):
+            st.session_state["menu"] = label
+            st.rerun()
+
+    # 검수 메뉴일 때만 설정 표시
+    if st.session_state["menu"] == "표기사항 검수":
+        st.markdown("---")
+        st.markdown("### ⚙️ 검수 설정")
+        export_type = st.selectbox("수출/내수 구분",
+            ["내수용 (국내)", "수출용 - 미국 FDA", "수출용 - 유럽 EU", "수출용 - 중국"],
+            key="export_type")
+        check_barcode = st.checkbox("바코드 자동 감지", value=True, key="check_barcode")
+        extra_context = st.text_area("추가 검수 지시사항", height=80,
+            placeholder="예: 유기농 인증 제품입니다.", key="extra_context")
+
+        st.markdown("---")
+        st.markdown("### 📋 검수 항목")
+        st.markdown("""
+        ✅ 제품명 / 식품유형
+        ✅ 원재료명 및 함량
+        ✅ 영양성분표
+        ✅ 유통기한/소비기한
+        ✅ 알레르기 유발물질
+        ✅ 원산지 / 제조자
+        ✅ 보관방법
+        ✅ 바코드 위치
+        """)
+
+menu = st.session_state.get("menu", "표기사항 검수")
 
 # ══════════════════════════════════════════════════════
-# TAB 1 — 표기사항 검수
+# 페이지 1 — 표기사항 검수
 # ══════════════════════════════════════════════════════
-with tab1:
+if menu == "표기사항 검수":
     col_up, col_pre = st.columns([1, 1])
+
     with col_up:
         st.markdown("#### 파일 업로드")
         uploaded = st.file_uploader("PDF 또는 이미지를 업로드하세요",
-            type=["pdf","png","jpg","jpeg","webp"],
-            help="최대 50MB")
+            type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB")
 
         if uploaded:
             file_bytes = uploaded.read()
             fi = get_file_info(file_bytes, uploaded.name)
             st.markdown(f"**📄 {fi['filename']}** — {fi['size_kb']} KB | {fi['extension'].upper()}")
 
+            check_barcode = st.session_state.get("check_barcode", True)
             if check_barcode and fi["is_image"]:
                 with st.spinner("바코드 감지 중..."):
                     barcodes = detect_barcodes(file_bytes)
@@ -127,10 +158,12 @@ with tab1:
 
             if st.button("🚀 검수 시작", type="primary", use_container_width=True):
                 if not os.environ.get("GEMINI_API_KEY"):
-                    st.error("API Key를 먼저 입력해주세요.")
+                    st.error("API Key를 사이드바에서 입력해주세요.")
                 else:
                     with st.spinner("Gemini가 분석 중입니다..."):
                         try:
+                            export_type = st.session_state.get("export_type", "내수용 (국내)")
+                            extra_context = st.session_state.get("extra_context", "")
                             ctx = f"[수출 구분: {export_type}]"
                             if extra_context:
                                 ctx += f" {extra_context}"
@@ -167,13 +200,12 @@ with tab1:
             st.image(file_bytes, caption=uploaded.name, use_container_width=True)
         else:
             st.markdown("""
-            <div style="height:280px;display:flex;align-items:center;justify-content:center;
+            <div style="height:260px;display:flex;align-items:center;justify-content:center;
                 background:#f8f9fa;border-radius:12px;color:#aaa;flex-direction:column">
                 <div style="font-size:2.5rem">📦</div>
                 <div style="margin-top:.5rem;font-size:.9rem">파일 업로드 후 미리보기</div>
             </div>""", unsafe_allow_html=True)
 
-    # ── 결과 ──────────────────────────────────────────
     if "result" in st.session_state:
         result = st.session_state["result"]
         fi = st.session_state["fi"]
@@ -239,7 +271,6 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
             else:
                 st.success("위반 사항 없음!")
-
             if warnings:
                 st.markdown(f"#### 💡 주의사항 ({len(warnings)}건)")
                 for w in warnings:
@@ -270,19 +301,18 @@ with tab1:
             st.text_area("상세 리포트", st.session_state["report"], height=200)
 
 # ══════════════════════════════════════════════════════
-# TAB 2 — 패키지 디자인 생성
+# 페이지 2 — 패키지 디자인 생성
 # ══════════════════════════════════════════════════════
-with tab2:
+elif menu == "패키지 디자인 생성":
     st.markdown("#### 🎨 패키지 디자인 AI 생성")
-    st.markdown("원하는 패키지 디자인을 자유롭게 설명해주세요. Gemini Imagen이 이미지를 생성합니다.")
+    st.markdown("원하는 패키지 디자인을 자유롭게 설명해주세요. AI가 이미지를 생성합니다.")
 
-    # 예시 프롬프트 칩
     example_prompts = [
         "가로로 긴 직사각형 인스턴트 커피 패키지, 기본 색상 노란색, 포인트 보라색",
         "원통형 과자 패키지, 민트색 배경에 흰색 로고, 프리미엄 느낌",
         "슬림한 초코바 패키지, 다크초콜릿 브라운과 골드 색상",
         "정사각형 녹차 음료 패키지, 연두색 그라디언트, 일본 감성",
-        "파우치형 스낵 패키지, 빨간색 배경에 한자 느낌 글씨",
+        "파우치형 스낵 패키지, 빨간색 배경, 귀여운 캐릭터 스타일",
     ]
     st.markdown("**빠른 예시:**")
     cols_chip = st.columns(len(example_prompts))
@@ -292,11 +322,18 @@ with tab2:
                 st.session_state["design_prompt"] = ep
 
     st.markdown("---")
+
     design_input = st.text_area(
         "디자인 설명",
         value=st.session_state.get("design_prompt", ""),
-        height=100,
-        placeholder="예: 가로로 긴 직사각형의 인스턴트 커피 패키지, 기본 색상은 노란색이고 포인트는 보라색",
+        height=250,
+        placeholder=(
+            "예시:\n"
+            "가로로 긴 직사각형의 인스턴트 커피 패키지\n"
+            "제품명은 '커피빈 리치 블렌드 커피믹스'\n"
+            "입수량 20STICKS\n"
+            "색상은 노란색 배경에 보라색으로 포인트 줘. 그리고 캐릭터가 있음 좋겠어."
+        ),
     )
 
     col_opt1, col_opt2 = st.columns(2)
@@ -311,27 +348,25 @@ with tab2:
         elif not design_input.strip():
             st.warning("디자인 설명을 입력해주세요.")
         else:
-            # 브리프 생성
             if show_brief:
                 with st.spinner("디자인 브리프 작성 중..."):
                     brief = refine_design_description(design_input)
                     st.session_state["design_brief"] = brief
 
-            # 이미지 생성
-            with st.spinner("Gemini Imagen으로 디자인 생성 중... (30~60초 소요)"):
+            with st.spinner("AI가 패키지 디자인 이미지를 생성 중입니다... (30~60초 소요)"):
+                import random
                 results_design = []
-                for _ in range(num_variants):
-                    res = generate_package_design(design_input)
+                for i in range(num_variants):
+                    seed = random.randint(1, 9999)
+                    res = generate_package_design(design_input, seed=seed)
                     results_design.append(res)
                 st.session_state["design_results"] = results_design
             st.rerun()
 
-    # 브리프 표시
     if "design_brief" in st.session_state:
         with st.expander("📋 AI 디자인 브리프", expanded=True):
             st.markdown(st.session_state["design_brief"])
 
-    # 생성된 이미지 표시
     if "design_results" in st.session_state:
         results_design = st.session_state["design_results"]
         st.markdown("---")
@@ -341,7 +376,6 @@ with tab2:
             with img_cols[i]:
                 if "error" in res:
                     st.error(f"생성 실패: {res['error']}")
-                    st.info("Imagen API는 Google AI Studio에서 이미지 생성 권한이 필요합니다. aistudio.google.com에서 Imagen 접근 권한을 확인해주세요.")
                 else:
                     img_bytes = base64.b64decode(res["image_b64"])
                     st.image(img_bytes, caption=f"디자인 {i+1}", use_container_width=True)
@@ -355,9 +389,9 @@ with tab2:
                     )
 
 # ══════════════════════════════════════════════════════
-# TAB 3 — 검수 기준 안내
+# 페이지 3 — 검수 기준 안내
 # ══════════════════════════════════════════════════════
-with tab3:
+elif menu == "검수 기준 안내":
     st.markdown("### 📖 식품 표기사항 검수 기준")
     reg_path = os.path.join(os.path.dirname(__file__), "data/regulations.json")
     with open(reg_path, "r", encoding="utf-8") as f:
