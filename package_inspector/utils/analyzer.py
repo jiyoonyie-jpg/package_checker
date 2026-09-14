@@ -4,9 +4,32 @@ import re
 from google import genai
 from google.genai import types
 
+MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"]
+
 def _client():
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    return genai.Client(api_key=api_key)
+    return genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
+
+def _generate(client, contents, system=None):
+    """모델을 순서대로 시도해서 첫 번째 성공 결과 반환"""
+    last_err = None
+    for model in MODELS:
+        try:
+            parts = []
+            if system:
+                parts.append(types.Part(text=system))
+            if isinstance(contents, str):
+                parts.append(types.Part(text=contents))
+            else:
+                parts.extend(contents)
+            response = client.models.generate_content(
+                model=model,
+                contents=[types.Content(role="user", parts=parts)]
+            )
+            return response.text
+        except Exception as e:
+            last_err = e
+            continue
+    raise Exception(f"모든 모델 실패: {last_err}")
 
 SYSTEM_PROMPT = """당신은 한국 식품위생법 및 식품 등의 표시기준 전문가입니다.
 패키지 이미지를 분석하여 필수 표기사항을 검수하고, 반드시 아래 JSON 형식으로만 응답하세요.
@@ -28,64 +51,55 @@ SYSTEM_PROMPT = """당신은 한국 식품위생법 및 식품 등의 표시기�
     "food_type": {"found": true/false, "value": "값 또는 null", "issue": "문제점 또는 null"},
     "barcode": {"found": true/false, "value": "값 또는 null", "issue": "문제점 또는 null"}
   },
-  "violations": [
-    {"field": "항목명", "severity": "high/medium/low", "message": "위반 내용"}
-  ],
-  "warnings": [
-    {"field": "항목명", "message": "주의 내용"}
-  ]
+  "violations": [{"field": "항목명", "severity": "high/medium/low", "message": "위반 내용"}],
+  "warnings": [{"field": "항목명", "message": "주의 내용"}]
 }"""
 
 def _parse_result(text: str) -> dict:
-    text = text.strip()
-    text = re.sub(r"^```json\s*", "", text)
+    text = re.sub(r"^```json\s*", "", text.strip())
     text = re.sub(r"^```\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
     try:
         return json.loads(text)
     except Exception:
-        return {
-            "overall_score": 0,
-            "summary": "결과 파싱 오류 — 원본: " + text[:200],
-            "detected_fields": {},
-            "violations": [],
-            "warnings": [],
-        }
+        return {"overall_score": 0, "summary": "파싱 오류: " + text[:200],
+                "detected_fields": {}, "violations": [], "warnings": []}
 
 def analyze_image_with_gemini(img_b64: str, media_type: str, context: str = "") -> dict:
     client = _client()
     user_msg = f"아래 패키지 이미지를 식품표기 기준으로 검수해주세요.\n추가 컨텍스트: {context}" if context else "아래 패키지 이미지를 식품표기 기준으로 검수해주세요."
-    response = client.models.generate_content(
-        model="gemini-1.5-flash",
-        contents=[
-            types.Content(role="user", parts=[
-                types.Part(text=SYSTEM_PROMPT),
-                types.Part(text=user_msg),
-                types.Part(inline_data=types.Blob(mime_type=media_type, data=img_b64)),
-            ])
-        ]
-    )
-    return _parse_result(response.text)
+    last_err = None
+    for model in MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=[types.Content(role="user", parts=[
+                    types.Part(text=SYSTEM_PROMPT),
+                    types.Part(text=user_msg),
+                    types.Part(inline_data=types.Blob(mime_type=media_type, data=img_b64)),
+                ])]
+            )
+            return _parse_result(response.text)
+        except Exception as e:
+            last_err = e
+            continue
+    return {"overall_score": 0, "summary": f"API 오류: {last_err}",
+            "detected_fields": {}, "violations": [], "warnings": []}
 
 def analyze_pdf_pages(pages: list, context: str = "") -> dict:
     if not pages or "error" in pages[0]:
         return {"overall_score": 0, "summary": "PDF 변환 실패", "detected_fields": {}, "violations": [], "warnings": []}
-    first = pages[0]
-    result = analyze_image_with_gemini(first["base64"], "image/png", context)
+    result = analyze_image_with_gemini(pages[0]["base64"], "image/png", context)
     if len(pages) > 1:
         result["summary"] += f" (총 {len(pages)}페이지 중 1페이지 기준)"
     return result
 
 def generate_report_text(result: dict, file_info: dict) -> str:
     lines = [
-        f"# 패키지 표기사항 검수 리포트",
+        "# 패키지 표기사항 검수 리포트",
         f"파일: {file_info.get('filename', '')}",
-        f"종합 점수: {result.get('overall_score', 0)}점",
-        f"",
-        f"## 검수 요약",
-        result.get("summary", ""),
-        f"",
-        f"## 항목별 결과",
+        f"종합 점수: {result.get('overall_score', 0)}점", "",
+        "## 검수 요약", result.get("summary", ""), "", "## 항목별 결과",
     ]
     for fid, fd in result.get("detected_fields", {}).items():
         status = "✅" if fd.get("found") else "❌"
