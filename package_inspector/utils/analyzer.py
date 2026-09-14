@@ -56,7 +56,7 @@ def analyze_image_with_gemini(img_b64: str, media_type: str, context: str = "") 
     client = _client()
     user_msg = f"아래 패키지 이미지를 식품표기 기준으로 검수해주세요.\n추가 컨텍스트: {context}" if context else "아래 패키지 이미지를 식품표기 기준으로 검수해주세요."
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-1.5-flash",
         contents=[
             types.Content(role="user", parts=[
                 types.Part(text=SYSTEM_PROMPT),
@@ -70,7 +70,6 @@ def analyze_image_with_gemini(img_b64: str, media_type: str, context: str = "") 
 def analyze_pdf_pages(pages: list, context: str = "") -> dict:
     if not pages or "error" in pages[0]:
         return {"overall_score": 0, "summary": "PDF 변환 실패", "detected_fields": {}, "violations": [], "warnings": []}
-    # 첫 페이지 분석 (필요시 여러 페이지 병합 가능)
     first = pages[0]
     result = analyze_image_with_gemini(first["base64"], "image/png", context)
     if len(pages) > 1:
