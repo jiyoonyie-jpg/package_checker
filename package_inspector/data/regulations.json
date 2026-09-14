@@ -1,0 +1,30 @@
+{
+  "required_fields": [
+    {"id": "product_name", "name": "제품명", "required": true, "description": "제품의 명칭 (식품유형 포함)"},
+    {"id": "manufacturer", "name": "제조자/수입자", "required": true, "description": "제조업소명, 소재지, 수입자명"},
+    {"id": "content_weight", "name": "내용량", "required": true, "description": "중량·용량·수량 및 단위"},
+    {"id": "ingredients", "name": "원재료명", "required": true, "description": "원재료명 및 함량 (많은 순서)"},
+    {"id": "nutrition_facts", "name": "영양성분표", "required": true, "description": "열량·탄수화물·단백질·지방·나트륨 등"},
+    {"id": "expiry_date", "name": "유통기한/소비기한", "required": true, "description": "유통기한 또는 소비기한"},
+    {"id": "storage_method", "name": "보관방법", "required": true, "description": "보관 온도 및 방법"},
+    {"id": "allergen", "name": "알레르기 유발물질", "required": true, "description": "21종 알레르기 유발물질 표시"},
+    {"id": "country_of_origin", "name": "원산지", "required": true, "description": "원재료의 원산지"},
+    {"id": "food_type", "name": "식품유형", "required": true, "description": "식품공전상 식품유형 분류"},
+    {"id": "barcode", "name": "바코드", "required": false, "description": "EAN-13 또는 UPC-A 바코드"}
+  ],
+  "common_violations": [
+    "영양성분 1일 기준치 대비 비율(%) 미표시",
+    "알레르기 표시 글씨 크기 7pt 미만",
+    "원재료명 함량 순서 미준수",
+    "유통기한과 소비기한 혼용 오기재",
+    "보관방법 온도 단위 누락",
+    "수입식품 한글표시 미비",
+    "나트륨 단위(mg) 누락",
+    "바코드 여백(quiet zone) 부족"
+  ],
+  "export_requirements": {
+    "us_fda": ["영문 Nutrition Facts 패널", "영문 알레르기 표시 (Big 9)", "Net Weight oz/g 병기", "Distributor 정보"],
+    "eu": ["영문/현지어 표시", "EU 28종 알레르기 표시", "영양성분 100g 기준 표시", "원산지 표시"],
+    "china": ["중문 표시 필수", "QS 인증 마크", "중국 수입 허가번호", "중국어 성분 표시"]
+  }
+}
