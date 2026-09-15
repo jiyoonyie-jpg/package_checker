@@ -53,9 +53,12 @@ header[data-testid="stHeader"] {
 .main .block-container,
 [data-testid="stMainBlockContainer"],
 div.block-container {
-    padding-top: 1rem !important;
+    padding: 0 1.2rem 1.2rem !important;
     margin-top: 0 !important;
-    background: transparent !important;
+    background: #FFFFFF !important;
+    border: 3px solid #C289BA !important;
+    border-top: none !important;
+    border-radius: 0 0 12px 12px !important;
 }
 
 /* 사이드바 항상 펼쳐진 상태로 고정 */
@@ -119,11 +122,13 @@ button[aria-label*="sidebar" i] {
 }
 
 /* 탭 바 — 폴더 탭 스타일 (메뉴를 누르면 열려서 쌓임) */
+/* block-container의 좌우 패딩을 상쇄해 테두리 끝까지 꽉 채움 */
 .st-key-tabbar {
     background: #C289BA !important;
-    border-radius: 10px 10px 0 0 !important;
+    border-radius: 12px 12px 0 0 !important;
     padding: .6rem .6rem 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 -1.2rem 0 -1.2rem !important;
+    width: calc(100% + 2.4rem) !important;
 }
 .st-key-tabbar [data-testid="column"] { padding: 0 2px !important; }
 .st-key-tabbar .stButton > button {
@@ -213,6 +218,17 @@ div[class*="st-key-card_"] {
 .stButton > button[kind="primary"]:hover {
     box-shadow: 0 6px 18px rgba(139,124,246,0.5) !important;
     filter: brightness(1.05);
+}
+
+/* 검수 시작 버튼 — 탭 바와 같은 자주색 */
+.st-key-card_start .stButton > button[kind="primary"] {
+    background: #C289BA !important;
+    box-shadow: 0 4px 14px rgba(194,137,186,0.4) !important;
+}
+.st-key-card_start .stButton > button[kind="primary"]:hover {
+    background: #B073A3 !important;
+    box-shadow: 0 6px 18px rgba(194,137,186,0.5) !important;
+    filter: none;
 }
 
 /* 파일 업로더 */
