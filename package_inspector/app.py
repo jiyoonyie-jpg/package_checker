@@ -17,12 +17,19 @@ st.set_page_config(
 # ── CSS ─────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap');
 
-/* 전체 기본 */
+:root {
+    --ivory: #FFFBF0;
+    --lavender: #ECE6FB;
+    --sky: #E2F1FB;
+    --accent-1: #8B7CF6;
+    --accent-2: #62A9EE;
+    --text-dark: #3B3358;
+}
+
 html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif;
-    background-color: #F5F3FF;
 }
 
 /* Streamlit 기본 요소 숨기기 */
@@ -32,185 +39,134 @@ footer {visibility: hidden;}
 [data-testid="stStatusWidget"] {display: none !important;}
 .stDeployButton {display: none !important;}
 
-/* 네이티브 헤더 완전히 제거 — 커스텀 헤더가 최상단에 오도록 */
+/* 네이티브 헤더 완전히 제거 — 탭 바가 최상단에 오도록 */
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* 사이드바 항상 펼쳐진 상태로 고정 — Streamlit이 접힌 상태로 바꿔도 강제로 무시 */
+/* 전체 배경 — 차분한 밝은 그라데이션 (화이트/연보라/하늘색/상아색) */
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(150deg, #FFFFFF 0%, var(--ivory) 25%, var(--lavender) 60%, var(--sky) 100%) !important;
+    background-attachment: fixed !important;
+    padding-top: 0 !important;
+}
+.main .block-container,
+[data-testid="stMainBlockContainer"],
+div.block-container {
+    padding-top: 1rem !important;
+    margin-top: 0 !important;
+    background: transparent !important;
+}
+
+/* 사이드바 항상 펼쳐진 상태로 고정 */
 [data-testid="stSidebar"] {
-    min-width: 280px !important;
-    width: 280px !important;
+    min-width: 270px !important;
+    width: 270px !important;
     transform: none !important;
     margin-left: 0 !important;
     visibility: visible !important;
+    border-right: 1px solid rgba(139,124,246,0.15) !important;
 }
 [data-testid="stSidebar"][aria-expanded="false"] {
     transform: none !important;
     margin-left: 0 !important;
-    min-width: 280px !important;
-    width: 280px !important;
+    min-width: 270px !important;
+    width: 270px !important;
 }
-
-/* 사이드바를 열고 닫는 버튼은 전부 숨김 (문구/이름 무관하게 "sidebar" 포함 버튼 전체 차단) */
 [data-testid="collapsedControl"],
 section[data-testid="stSidebarCollapsedControl"],
-.st-emotion-cache-1lna757,
 button[title*="sidebar" i],
 button[aria-label*="sidebar" i] {
     display: none !important;
 }
 [data-testid="stSidebarResizeHandle"] {
-    pointer-events: none !important;
     display: none !important;
+    pointer-events: none !important;
 }
 
-/* 상단 여백 제거 — 커스텀 헤더가 화면 맨 위에 붙도록 */
-.main .block-container,
-[data-testid="stAppViewContainer"] .main .block-container,
-[data-testid="stMainBlockContainer"],
-div.block-container {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-}
-[data-testid="stAppViewContainer"] {
-    padding-top: 0 !important;
-}
-
-/* 사이드바 — 그라디언트 + 노이즈 텍스처 */
+/* 사이드바 — 화이트/아이보리/라벤더 그라데이션 */
 [data-testid="stSidebar"] > div:first-child {
-    background: linear-gradient(145deg,
-        rgba(169,140,76,0.95),
-        rgba(108,149,214,0.95),
-        rgba(124,43,117,0.95)) !important;
-    position: relative !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, var(--ivory) 45%, var(--lavender) 100%) !important;
 }
-[data-testid="stSidebar"] > div:first-child::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 400px 400px;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-    z-index: 0;
-}
-[data-testid="stSidebar"] {
-    border-right: none;
-}
-[data-testid="stSidebar"] * {color: #EDE9FE !important;}
+[data-testid="stSidebar"] * { color: var(--text-dark) !important; }
 [data-testid="stSidebar"] .stButton > button {
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    color: white !important;
+    background: rgba(255,255,255,0.6) !important;
+    border: 1px solid rgba(139,124,246,0.25) !important;
+    color: var(--text-dark) !important;
     border-radius: 10px !important;
     font-weight: 500 !important;
     transition: all .2s !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(255,255,255,0.22) !important;
+    background: rgba(255,255,255,0.95) !important;
+    border-color: var(--accent-1) !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
-    background: rgba(255,255,255,0.28) !important;
-    border: 1px solid rgba(255,255,255,0.5) !important;
-    font-weight: 700 !important;
-}
-[data-testid="stSidebar"] hr {border-color: rgba(255,255,255,0.2) !important;}
-[data-testid="stSidebar"] label {color: #DDD6FE !important;}
-[data-testid="stSidebar"] .stSelectbox > div > div {
-    background: rgba(255,255,255,0.12) !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
+    border: none !important;
     color: white !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(139,124,246,0.35) !important;
 }
+[data-testid="stSidebar"] hr { border-color: rgba(139,124,246,0.2) !important; }
+[data-testid="stSidebar"] label { color: var(--text-dark) !important; }
+[data-testid="stSidebar"] .stSelectbox > div > div,
 [data-testid="stSidebar"] .stTextInput > div > div > input,
 [data-testid="stSidebar"] .stTextArea > div > div > textarea {
-    background: rgba(255,255,255,0.12) !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
-    color: white !important;
+    background: rgba(255,255,255,0.7) !important;
+    border: 1px solid rgba(139,124,246,0.25) !important;
+    color: var(--text-dark) !important;
 }
 
-/* 헤더 */
-.main-header {
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    width: 100%;
-    padding: 1.1rem 2rem;
-    border-radius: 0 0 16px 16px;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(145deg,
-        rgba(169,140,76,0.95),
-        rgba(108,149,214,0.95),
-        rgba(124,43,117,0.95));
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 4px 20px rgba(76,29,149,0.25);
-    overflow: hidden;
+/* 탭 바 — 메뉴를 누르면 폴더처럼 열려서 쌓이는 탭 */
+.st-key-tabbar { padding: .6rem .2rem 0 !important; }
+.st-key-tabbar [data-testid="column"] { padding: 0 2px !important; }
+.st-key-tabbar .stButton > button {
+    border-radius: 10px 10px 0 0 !important;
+    border: 1px solid rgba(139,124,246,0.22) !important;
+    border-bottom: none !important;
+    font-weight: 600 !important;
+    padding: .5rem .8rem !important;
+    transition: all .15s !important;
 }
-.main-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        repeating-linear-gradient(
-            45deg,
-            rgba(255,255,255,0.04) 0px,
-            rgba(255,255,255,0.04) 1px,
-            transparent 1px,
-            transparent 14px
-        ),
-        repeating-linear-gradient(
-            -45deg,
-            rgba(255,255,255,0.04) 0px,
-            rgba(255,255,255,0.04) 1px,
-            transparent 1px,
-            transparent 14px
-        );
-    pointer-events: none;
+.st-key-tabbar .stButton > button[kind="secondary"] {
+    background: rgba(255,255,255,0.45) !important;
+    color: #6B6485 !important;
+    box-shadow: none !important;
 }
-.main-header h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: white;
-    margin: 0;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.3);
-    position: relative;
+.st-key-tabbar .stButton > button[kind="secondary"]:hover {
+    background: rgba(255,255,255,0.85) !important;
+    color: var(--text-dark) !important;
 }
-.main-header p {
-    font-size: .8rem;
-    color: rgba(255,255,255,.8);
-    margin: .2rem 0 0;
-    position: relative;
-}
-
-/* 메인 콘텐츠 배경 */
-.main .block-container {
-    background: #F5F3FF;
-    padding-top: 0 !important;
+.st-key-tabbar .stButton > button[kind="primary"] {
+    background: #FFFFFF !important;
+    color: var(--text-dark) !important;
+    box-shadow: 0 -2px 10px rgba(139,124,246,0.12) !important;
+    border-color: rgba(139,124,246,0.35) !important;
 }
 
 /* 카드 */
 .card {
-    background: white;
-    border: 1px solid #DDD6FE;
-    border-radius: 14px;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(139,124,246,0.18);
+    border-radius: 16px;
     padding: 1.2rem 1.4rem;
     margin-bottom: 1rem;
-    box-shadow: 0 2px 12px rgba(109,40,217,0.07);
+    box-shadow: 0 4px 18px rgba(98,84,163,0.08);
 }
 
 /* 점수 카드 */
 .score-card {
     padding: 1.4rem;
-    border-radius: 14px;
+    border-radius: 16px;
     text-align: center;
     border: 2px solid;
+    background: rgba(255,255,255,0.7);
 }
-.score-high { background: #F0FDF4; border-color: #22C55E; }
-.score-mid  { background: #FFFBEB; border-color: #F59E0B; }
-.score-low  { background: #FFF1F2; border-color: #F43F5E; }
+.score-high { border-color: #22C55E; }
+.score-mid  { border-color: #F59E0B; }
+.score-low  { border-color: #F43F5E; }
 .score-num  { font-size: 3rem; font-weight: 700; line-height: 1; }
 
 /* 항목 행 */
@@ -218,8 +174,8 @@ div.block-container {
     display: flex; align-items: flex-start; gap: 8px;
     padding: .5rem .8rem; border-radius: 10px; margin-bottom: .3rem; font-size: .88rem;
 }
-.field-ok   { background: #F0FDF4; }
-.field-fail { background: #FFF1F2; }
+.field-ok   { background: rgba(34,197,94,0.08); }
+.field-fail { background: rgba(244,63,94,0.08); }
 .field-badge {
     width: 20px; height: 20px; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
@@ -232,56 +188,57 @@ div.block-container {
 .violation-card {
     padding: .7rem 1rem; border-radius: 10px;
     margin-bottom: .4rem; border-left: 4px solid; font-size: .88rem;
+    background: rgba(255,255,255,0.6);
 }
-.v-high   { background: #FFF1F2; border-color: #F43F5E; }
-.v-medium { background: #FFFBEB; border-color: #F59E0B; }
-.v-low    { background: #F0FDF4; border-color: #22C55E; }
-.v-warn   { background: #EFF6FF; border-color: #3B82F6; }
+.v-high   { border-color: #F43F5E; }
+.v-medium { border-color: #F59E0B; }
+.v-low    { border-color: #22C55E; }
+.v-warn   { border-color: #3B82F6; }
 
 /* 버튼 */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #6D28D9, #7C3AED) !important;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
     border: none !important;
     border-radius: 10px !important;
     color: white !important;
     font-weight: 600 !important;
     padding: .6rem 1.2rem !important;
-    box-shadow: 0 4px 14px rgba(109,40,217,0.35) !important;
+    box-shadow: 0 4px 14px rgba(139,124,246,0.35) !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #5B21B6, #6D28D9) !important;
-    box-shadow: 0 6px 18px rgba(109,40,217,0.45) !important;
+    box-shadow: 0 6px 18px rgba(139,124,246,0.5) !important;
+    filter: brightness(1.05);
 }
 
 /* 파일 업로더 */
 [data-testid="stFileUploader"] {
-    border: 2px dashed #A78BFA !important;
-    border-radius: 12px !important;
-    background: #FAF5FF !important;
+    border: 2px dashed #B4A7F0 !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,0.55) !important;
 }
 
 /* 요약 박스 */
 .summary-box {
-    background: linear-gradient(135deg, #FAF5FF, #F3E8FF);
-    border: 1px solid #C4B5FD;
-    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(226,241,251,0.6));
+    border: 1px solid rgba(139,124,246,0.25);
+    border-radius: 14px;
     padding: .9rem 1.1rem;
     font-size: .92rem;
-    color: #4C1D95;
+    color: var(--text-dark);
     margin: 1rem 0;
 }
 
 /* 다운로드 버튼 */
 .stDownloadButton > button {
-    background: white !important;
-    border: 1.5px solid #A78BFA !important;
-    color: #6D28D9 !important;
+    background: rgba(255,255,255,0.8) !important;
+    border: 1.5px solid #B4A7F0 !important;
+    color: #6D5FD8 !important;
     border-radius: 10px !important;
     font-weight: 500 !important;
 }
 .stDownloadButton > button:hover {
-    background: #F5F3FF !important;
-    border-color: #7C3AED !important;
+    background: white !important;
+    border-color: var(--accent-1) !important;
 }
 
 /* 탭 스타일 제거 (페이지 방식이므로) */
@@ -289,40 +246,45 @@ div.block-container {
 
 /* expander */
 [data-testid="stExpander"] {
-    border: 1px solid #DDD6FE !important;
-    border-radius: 12px !important;
-    background: white !important;
+    border: 1px solid rgba(139,124,246,0.2) !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,0.6) !important;
 }
 
 /* selectbox, checkbox */
 .stSelectbox > div > div {
-    border-color: #C4B5FD !important;
+    border-color: rgba(139,124,246,0.3) !important;
     border-radius: 10px !important;
 }
-.stCheckbox > label { color: #EDE9FE !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── 메뉴 상태 ─────────────────────────────────────────────
+MENUS = [("🔍", "표기사항 검수"), ("🎨", "패키지 디자인 생성"), ("📖", "검수 기준 안내")]
+MENU_ICON = dict(MENUS)
+
+# ── 메뉴 / 탭 상태 ─────────────────────────────────────────
 if "menu" not in st.session_state:
     st.session_state["menu"] = "표기사항 검수"
+if "open_tabs" not in st.session_state:
+    st.session_state["open_tabs"] = ["표기사항 검수"]
 
 # ── 사이드바 ──────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
     <div style="padding:.8rem 0 .5rem; text-align:center;">
       <div style="font-size:1.8rem">🎨</div>
-      <div style="font-size:.85rem; color:#C4B5FD; margin-top:.2rem">커피빈 AI 시스템</div>
+      <div style="font-size:.85rem; color:#8B7CF6; margin-top:.2rem; font-weight:700">커피빈 AI 시스템</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
 
-    menus = [("🔍", "표기사항 검수"), ("🎨", "패키지 디자인 생성"), ("📖", "검수 기준 안내")]
-    for icon, label in menus:
+    for icon, label in MENUS:
         is_active = st.session_state["menu"] == label
         if st.button(f"{icon}  {label}", key=f"nav_{label}",
                      use_container_width=True,
                      type="primary" if is_active else "secondary"):
+            if label not in st.session_state["open_tabs"]:
+                st.session_state["open_tabs"].append(label)
             st.session_state["menu"] = label
             st.rerun()
 
@@ -347,19 +309,8 @@ with st.sidebar:
         ✅ 보관방법 / 바코드
         </div>""", unsafe_allow_html=True)
 
-# ── 헤더 + 설정 팝오버 ────────────────────────────────────
-hcol1, hcol2 = st.columns([11, 1])
-with hcol1:
-    st.markdown("""
-    <div class="main-header">
-      <div>
-        <h1>🎨 커피빈 유통 패키지 디자인 AI 검수 시스템</h1>
-        <p>식품위생법 기반 AI 표기 검수 · 패키지 디자인 생성 · Powered by Google Gemini</p>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-with hcol2:
-    with st.popover("⚙️", use_container_width=True):
+    st.markdown("---")
+    with st.popover("⚙️ API / 설정", use_container_width=True):
         st.markdown("### 🔑 API 설정")
         api_key = os.environ.get("GEMINI_API_KEY", "")
         input_key = st.text_input("Gemini API Key", value=api_key, type="password",
@@ -372,6 +323,30 @@ with hcol2:
         st.markdown("[🐙 GitHub 저장소](https://github.com/jiyoonyie-jpg/package_checker)")
         st.markdown("---")
         st.markdown("<div style='font-size:.75rem; color:#888'>커피빈 유통사업팀 전용 시스템<br>문의: coffeebeankorea01@gmail.com</div>", unsafe_allow_html=True)
+
+# ── 탭 바 — 메뉴를 누르면 폴더처럼 열려서 쌓임 ──────────────
+with st.container(key="tabbar"):
+    tabs = st.session_state["open_tabs"]
+    widths = []
+    for _ in tabs:
+        widths += [5, 1]
+    widths += [12]
+    tab_cols = st.columns(widths)
+    for i, label in enumerate(tabs):
+        is_active = st.session_state["menu"] == label
+        with tab_cols[i * 2]:
+            if st.button(f"{MENU_ICON.get(label,'')} {label}", key=f"tabbtn_{i}",
+                         use_container_width=True,
+                         type="primary" if is_active else "secondary"):
+                st.session_state["menu"] = label
+                st.rerun()
+        with tab_cols[i * 2 + 1]:
+            if len(tabs) > 1:
+                if st.button("✕", key=f"tabclose_{i}", use_container_width=True):
+                    tabs.remove(label)
+                    if st.session_state["menu"] == label:
+                        st.session_state["menu"] = tabs[-1]
+                    st.rerun()
 
 menu = st.session_state.get("menu", "표기사항 검수")
 
