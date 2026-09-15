@@ -38,9 +38,6 @@ header[data-testid="stHeader"] {
     box-shadow: none !important;
     height: 3rem !important;
 }
-/* 툴바(공유/깃허브 버튼)만 숨김 */
-[data-testid="stToolbar"] {visibility: hidden !important;}
-
 /* 사이드바 토글 버튼 강제 표시 */
 [data-testid="collapsedControl"],
 section[data-testid="stSidebarCollapsedControl"],
