@@ -3,7 +3,7 @@ import json, os, base64, sys, random
 sys.path.insert(0, os.path.dirname(__file__))
 
 from utils.extractor import pdf_to_images, image_to_base64, detect_barcodes, get_file_info
-from utils.analyzer import analyze_image_with_gemini, analyze_pdf_pages, generate_report_text
+from utils.analyzer import analyze_images_with_gemini, generate_report_text
 from utils.designer import generate_package_design, refine_design_description
 from utils.reporter import export_to_excel
 
@@ -398,39 +398,46 @@ with st.container(key="app_frame"):
         with col_info:
             with st.container(key="card_info_upload"):
                 st.markdown("##### 📋 정보표시면 업로드")
-                info_uploaded = st.file_uploader("정보표시면 (필수)",
-                    type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 원재료명/영양성분표 등 표기 이미지",
-                    label_visibility="collapsed", key="info_uploader")
+                st.caption("정보표시면, 품목제조보고서 등 여러 문서를 함께 올리면 한 번에 분석합니다.")
+                info_uploaded_list = st.file_uploader("정보표시면 (필수)",
+                    type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 원재료명/영양성분표/품목제조보고서 등",
+                    label_visibility="collapsed", key="info_uploader", accept_multiple_files=True)
 
-                if info_uploaded:
-                    info_bytes = info_uploaded.getvalue()
-                    info_fi = get_file_info(info_bytes, info_uploaded.name)
-                    chip_col, view_col = st.columns([4, 1])
-                    with chip_col:
-                        st.markdown(f"""
-                        <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
-                          padding:.5rem .8rem;font-size:.85rem;margin:.4rem 0">
-                          📄 <b>{info_fi['filename']}</b>
-                          <span style="color:#7C3AED">· {info_fi['size_kb']} KB</span>
-                        </div>""", unsafe_allow_html=True)
-                    with view_col:
-                        with st.popover("👁 보기", use_container_width=True):
-                            if info_fi["is_pdf"]:
-                                imgs = pdf_to_images(info_bytes)
-                                if imgs and "error" not in imgs[0]:
-                                    st.image(imgs[0]["bytes"], use_container_width=True)
-                            else:
-                                st.image(info_bytes, use_container_width=True)
+                if info_uploaded_list:
+                    for uf in info_uploaded_list:
+                        ub = uf.getvalue()
+                        ufi = get_file_info(ub, uf.name)
+                        chip_col, view_col = st.columns([4, 1])
+                        with chip_col:
+                            st.markdown(f"""
+                            <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
+                              padding:.5rem .8rem;font-size:.85rem;margin:.4rem 0">
+                              📄 <b>{ufi['filename']}</b>
+                              <span style="color:#7C3AED">· {ufi['size_kb']} KB</span>
+                            </div>""", unsafe_allow_html=True)
+                        with view_col:
+                            with st.popover("👁 보기", use_container_width=True):
+                                if ufi["is_pdf"]:
+                                    imgs = pdf_to_images(ub)
+                                    if imgs and "error" not in imgs[0]:
+                                        st.image(imgs[0]["bytes"], use_container_width=True)
+                                else:
+                                    st.image(ub, use_container_width=True)
 
-                    if st.session_state.get("check_barcode", True) and info_fi["is_image"]:
-                        with st.spinner("바코드 감지 중..."):
-                            barcodes = detect_barcodes(info_bytes)
-                            if barcodes and "error" not in barcodes[0]:
-                                st.success(f"✅ 바코드 {len(barcodes)}개 감지됨")
-                                for bc in barcodes:
-                                    st.code(f"{bc['type']}: {bc['data']}")
-                            else:
-                                st.info("바코드 자동 감지 불가 (AI가 직접 확인)")
+                    if st.session_state.get("check_barcode", True):
+                        all_barcodes = []
+                        for uf in info_uploaded_list:
+                            fi_chk = get_file_info(uf.getvalue(), uf.name)
+                            if fi_chk["is_image"]:
+                                bc_result = detect_barcodes(uf.getvalue())
+                                if bc_result and "error" not in bc_result[0]:
+                                    all_barcodes.extend(bc_result)
+                        if all_barcodes:
+                            st.success(f"✅ 바코드 {len(all_barcodes)}개 감지됨")
+                            for bc in all_barcodes:
+                                st.code(f"{bc['type']}: {bc['data']}")
+                        else:
+                            st.info("바코드 자동 감지 불가 (AI가 직접 확인)")
                 else:
                     st.markdown("""
                     <div style="height:180px;display:flex;align-items:center;justify-content:center;
@@ -495,7 +502,7 @@ with st.container(key="app_frame"):
 
         with st.container(key="card_start"):
             if st.button("🚀 검수 시작", type="primary", use_container_width=True):
-                if not info_uploaded:
+                if not info_uploaded_list:
                     st.error("📋 정보표시면 파일을 먼저 업로드해주세요.")
                 elif not design_uploaded:
                     st.error("🎨 디자인 시안 파일을 먼저 업로드해주세요.")
@@ -504,8 +511,6 @@ with st.container(key="app_frame"):
                 else:
                     with st.spinner("Gemini AI가 분석 중입니다..."):
                         try:
-                            info_bytes = info_uploaded.getvalue()
-                            info_fi = get_file_info(info_bytes, info_uploaded.name)
                             et = st.session_state.get("export_type", "내수용 (국내)")
                             ec = st.session_state.get("extra_context", "")
                             ctx = f"[수출 구분: {et}]" + (f" {ec}" if ec else "")
@@ -523,16 +528,25 @@ with st.container(key="app_frame"):
                                            "png":"image/png","webp":"image/webp"}.get(design_fi["extension"],"image/png")
                                     design_b64, design_mt = image_to_base64(design_bytes, dmt), dmt
 
-                            if info_fi["is_pdf"]:
-                                pages = pdf_to_images(info_bytes)
-                                result = analyze_pdf_pages(pages, ctx, design_b64, design_mt)
-                            else:
-                                mt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
-                                      "png":"image/png","webp":"image/webp"}.get(info_fi["extension"],"image/png")
-                                result = analyze_image_with_gemini(image_to_base64(info_bytes, mt), mt, ctx, design_b64, design_mt)
+                            info_images = []
+                            for uf in info_uploaded_list:
+                                ub = uf.getvalue()
+                                ufi = get_file_info(ub, uf.name)
+                                if ufi["is_pdf"]:
+                                    upages = pdf_to_images(ub)
+                                    if upages and "error" not in upages[0]:
+                                        info_images.append({"data": upages[0]["base64"], "mime_type": "image/png"})
+                                else:
+                                    umt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
+                                           "png":"image/png","webp":"image/webp"}.get(ufi["extension"],"image/png")
+                                    info_images.append({"data": image_to_base64(ub, umt), "mime_type": umt})
 
-                            st.session_state.update({"result": result, "fi": info_fi,
-                                "file_bytes": info_bytes, "is_pdf": info_fi["is_pdf"],
+                            result = analyze_images_with_gemini(info_images, ctx, design_b64, design_mt)
+
+                            first_bytes = info_uploaded_list[0].getvalue()
+                            first_fi = get_file_info(first_bytes, info_uploaded_list[0].name)
+                            st.session_state.update({"result": result, "fi": first_fi,
+                                "file_bytes": first_bytes, "is_pdf": first_fi["is_pdf"],
                                 "has_design": design_uploaded is not None})
                             st.success("✅ 검수 완료!")
                             st.rerun()
