@@ -25,18 +25,39 @@ html, body, [class*="css"] {
     background-color: #F5F3FF;
 }
 
-/* Streamlit 기본 요소 숨기기 */
+/* Streamlit 기본 요소 숨기기 (토글 버튼은 유지) */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 [data-testid="stToolbar"] {display: none !important;}
 [data-testid="stDecoration"] {display: none !important;}
 [data-testid="stStatusWidget"] {display: none !important;}
-header[data-testid="stHeader"] {display: none !important;}
 .stDeployButton {display: none !important;}
+/* 헤더는 투명하게만 — 토글 버튼 살림 */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    box-shadow: none !important;
+}
 
-/* 사이드바 */
+/* 사이드바 — 그라디언트 + 노이즈 텍스처 */
+[data-testid="stSidebar"] > div:first-child {
+    background: linear-gradient(145deg,
+        rgba(169,140,76,0.95),
+        rgba(108,149,214,0.95),
+        rgba(124,43,117,0.95)) !important;
+    position: relative !important;
+}
+[data-testid="stSidebar"] > div:first-child::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 400px 400px;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 0;
+}
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #3B1F6B 0%, #4C1D95 60%, #5B21B6 100%);
     border-right: none;
 }
 [data-testid="stSidebar"] * {color: #EDE9FE !important;}
