@@ -25,11 +25,13 @@ st.markdown("""
     --sky: #E2F1FB;
     --accent-1: #8B7CF6;
     --accent-2: #62A9EE;
-    --text-dark: #3B3358;
+    --text-dark: #1D1D1F;
+    --mac-titlebar: #F0F0F3;
+    --mac-border: rgba(0,0,0,0.08);
 }
 
 html, body, [class*="css"] {
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans KR', sans-serif;
 }
 
 /* Streamlit 기본 요소 숨기기 */
@@ -50,16 +52,16 @@ header[data-testid="stHeader"] {
     background-attachment: fixed !important;
     padding-top: 0 !important;
 }
-/* 앱 프레임 — Streamlit의 실제 본문 래퍼(.main)에 직접 테두리를 둘러서
-   중첩 컨테이너의 폭 계산에 좌우되지 않도록 함 */
+/* 앱 프레임 — 맥북 스타일 창(윈도우): 굵은 테두리 대신 은은한 그림자 + 얇은 선 */
 [data-testid="stMain"],
 .main {
     background: #FFFFFF !important;
-    border: 8px solid #C289BA !important;
-    border-radius: 14px !important;
-    margin: 0 1.5rem !important;
+    border: 1px solid var(--mac-border) !important;
+    border-radius: 12px !important;
+    margin: 1rem 1.5rem 1.5rem !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 2px 10px rgba(0,0,0,0.06) !important;
 }
 .main .block-container,
 [data-testid="stMainBlockContainer"],
@@ -96,22 +98,21 @@ button[aria-label*="sidebar" i] {
     pointer-events: none !important;
 }
 
-/* 사이드바 — 화이트/아이보리/라벤더 그라데이션 */
+/* 사이드바 — 맥북 Finder 스타일 (연한 회색, 그라데이션 없음) */
 [data-testid="stSidebar"] > div:first-child {
-    background: linear-gradient(180deg, #FFFFFF 0%, var(--ivory) 45%, var(--lavender) 100%) !important;
+    background: #F5F5F7 !important;
 }
 [data-testid="stSidebar"] * { color: var(--text-dark) !important; }
 [data-testid="stSidebar"] .stButton > button {
-    background: rgba(255,255,255,0.6) !important;
-    border: 1px solid rgba(139,124,246,0.25) !important;
-    color: var(--text-dark) !important;
-    border-radius: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #3A3A3C !important;
+    border-radius: 8px !important;
     font-weight: 500 !important;
-    transition: all .2s !important;
+    transition: all .15s !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(255,255,255,0.95) !important;
-    border-color: var(--accent-1) !important;
+    background: rgba(0,0,0,0.05) !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
@@ -130,67 +131,82 @@ button[aria-label*="sidebar" i] {
     color: var(--text-dark) !important;
 }
 
-/* 탭 바 — 폴더 탭 스타일 (메뉴를 누르면 열려서 쌓임) */
-/* block-container의 상단/좌우 패딩을 상쇄해 .main 테두리 끝까지 꽉 채움 */
+/* 탭 바 — 맥북 타이틀바 스타일 (신호등 버튼 + 사파리풍 탭) */
+/* block-container의 상단/좌우 패딩을 상쇄해 창 테두리 끝까지 꽉 채움 */
 .st-key-tabbar {
-    background: #C289BA !important;
+    background: var(--mac-titlebar) !important;
+    border-bottom: 1px solid var(--mac-border) !important;
     border-radius: 12px 12px 0 0 !important;
-    padding: .6rem .6rem 0 !important;
+    padding: .6rem .8rem .5rem !important;
     margin: -1rem -1.2rem 0 -1.2rem !important;
     width: calc(100% + 2.4rem) !important;
 }
 .st-key-tabbar [data-testid="column"] { padding: 0 2px !important; }
 
+/* 신호등 버튼 (빨강/노랑/초록) */
+.mac-dots { display: flex; align-items: center; gap: 8px; height: 100%; padding-left: 2px; }
+.mac-dots span {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+.mac-dots .dot-red    { background: #FF5F57; }
+.mac-dots .dot-yellow { background: #FEBC2E; }
+.mac-dots .dot-green  { background: #28C840; }
+
 /* 탭 그룹(라벨+닫기x) — 그룹 컨테이너 자체가 탭 모양의 배경을 갖고,
    안의 버튼 두 개는 배경 없이 투명하게 만들어 하나로 보이게 함 */
 div[class*="st-key-tabgroup_"] {
-    border-radius: 10px 10px 0 0 !important;
+    border-radius: 8px !important;
     padding: 0 !important;
     overflow: hidden !important;
 }
-div[class*="st-key-tabgroup_active_"] { background: #FFFFFF !important; }
-div[class*="st-key-tabgroup_inactive_"] { background: rgba(255,255,255,0.18) !important; }
+div[class*="st-key-tabgroup_active_"] {
+    background: #FFFFFF !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+}
+div[class*="st-key-tabgroup_inactive_"] { background: transparent !important; }
 div[class*="st-key-tabgroup_"] [data-testid="column"] { padding: 0 !important; }
 div[class*="st-key-tabgroup_"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
 div[class*="st-key-tabgroup_"] .stButton > button {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    border-radius: 0 !important;
+    border-radius: 8px !important;
     font-weight: 500 !important;
     transition: all .15s !important;
-    padding: .5rem .6rem !important;
+    padding: .4rem .6rem !important;
+    font-size: .88rem !important;
 }
 div[class*="st-key-tabgroup_active_"] .stButton > button {
     color: var(--text-dark) !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
 }
 div[class*="st-key-tabgroup_inactive_"] .stButton > button {
-    color: rgba(255,255,255,0.9) !important;
+    color: #6E6E73 !important;
 }
-div[class*="st-key-tabgroup_"] .stButton > button:hover {
-    background: rgba(0,0,0,0.06) !important;
+div[class*="st-key-tabgroup_inactive_"] .stButton > button:hover {
+    background: rgba(0,0,0,0.05) !important;
 }
 /* 닫기(x) 버튼만 호버 시 빨간색으로 강조 */
 div[class*="st-key-tabgroup_"] [data-testid="column"]:last-child .stButton > button {
-    font-size: .8rem !important;
-    padding: .5rem .7rem !important;
+    font-size: .75rem !important;
+    padding: .4rem .6rem !important;
+    color: #A1A1A6 !important;
 }
 div[class*="st-key-tabgroup_"] [data-testid="column"]:last-child .stButton > button:hover {
-    background: rgba(239,68,68,0.85) !important;
+    background: rgba(239,68,68,0.9) !important;
     color: #FFFFFF !important;
 }
 
-/* 카드 */
+/* 카드 — 맥북 스타일: 순백 배경 + 얇은 선 + 은은한 그림자 */
 .card,
 div[class*="st-key-card_"] {
-    background: rgba(255,255,255,0.72);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(139,124,246,0.18);
-    border-radius: 16px;
+    background: #FFFFFF;
+    border: 1px solid var(--mac-border);
+    border-radius: 12px;
     padding: 1.2rem 1.4rem;
     margin-bottom: 1rem;
-    box-shadow: 0 4px 18px rgba(98,84,163,0.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
     box-sizing: border-box !important;
 }
 
@@ -378,7 +394,13 @@ with st.sidebar:
 # ── 탭 바 — 메뉴를 누르면 폴더처럼 열려서 쌓임 ──────────────
 with st.container(key="tabbar"):
     tabs = st.session_state["open_tabs"]
-    tab_cols = st.columns([3] * len(tabs) + [12])
+    all_cols = st.columns([1.2] + [3] * len(tabs) + [12])
+    with all_cols[0]:
+        st.markdown("""
+        <div class="mac-dots">
+          <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+        </div>""", unsafe_allow_html=True)
+    tab_cols = all_cols[1:]
     for i, label in enumerate(tabs):
         is_active = st.session_state["menu"] == label
         group_key = f"tabgroup_active_{i}" if is_active else f"tabgroup_inactive_{i}"
