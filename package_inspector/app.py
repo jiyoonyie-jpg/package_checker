@@ -59,7 +59,8 @@ header[data-testid="stHeader"] {
     border: 1px solid var(--mac-border) !important;
     border-radius: 12px !important;
     margin: 1rem 1.5rem 1.5rem !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     box-sizing: border-box !important;
     box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 2px 10px rgba(0,0,0,0.06) !important;
 }
