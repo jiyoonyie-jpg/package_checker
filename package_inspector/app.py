@@ -67,7 +67,7 @@ div.block-container {
     border: 3px solid #C289BA !important;
     border-radius: 12px !important;
     padding: 0 1.2rem 1.2rem !important;
-    margin: 0 .8rem !important;
+    margin: 0 !important;
     overflow: hidden !important;
 }
 
@@ -140,43 +140,46 @@ button[aria-label*="sidebar" i] {
     margin: 0 -1.2rem 0 -1.2rem !important;
     width: calc(100% + 2.4rem) !important;
 }
-.st-key-tabbar [data-testid="column"] { padding: 0 !important; }
-/* 라벨 버튼 + 닫기(x) 버튼을 하나의 폴더 탭처럼 붙여줌 */
-.st-key-tabbar [data-testid="column"]:nth-child(2n) {
-    margin-left: -10px !important;
+.st-key-tabbar [data-testid="column"] { padding: 0 2px !important; }
+
+/* 탭 그룹(라벨+닫기x) — 그룹 컨테이너 자체가 탭 모양의 배경을 갖고,
+   안의 버튼 두 개는 배경 없이 투명하게 만들어 하나로 보이게 함 */
+div[class*="st-key-tabgroup_"] {
+    border-radius: 10px 10px 0 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
-.st-key-tabbar .stButton > button {
+div[class*="st-key-tabgroup_active_"] { background: #FFFFFF !important; }
+div[class*="st-key-tabgroup_inactive_"] { background: rgba(255,255,255,0.18) !important; }
+div[class*="st-key-tabgroup_"] [data-testid="column"] { padding: 0 !important; }
+div[class*="st-key-tabgroup_"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
+div[class*="st-key-tabgroup_"] .stButton > button {
+    background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
     font-weight: 500 !important;
     transition: all .15s !important;
+    padding: .5rem .6rem !important;
 }
-.st-key-tabbar [data-testid="column"]:nth-child(odd) .stButton > button {
-    border-radius: 10px 0 0 0 !important;
-    padding: .5rem .3rem .5rem 1rem !important;
-}
-.st-key-tabbar [data-testid="column"]:nth-child(2n) .stButton > button {
-    border-radius: 0 10px 0 0 !important;
-    padding: .5rem 1rem .5rem .3rem !important;
-    font-size: .85rem !important;
-}
-.st-key-tabbar [data-testid="column"]:nth-child(2n) .stButton > button:hover {
-    background: rgba(239,68,68,0.8) !important;
-    color: #FFFFFF !important;
-}
-.st-key-tabbar .stButton > button[kind="secondary"] {
-    background: rgba(255,255,255,0.16) !important;
-    color: rgba(255,255,255,0.9) !important;
-    box-shadow: none !important;
-}
-.st-key-tabbar .stButton > button[kind="secondary"]:hover {
-    background: rgba(255,255,255,0.28) !important;
-    color: #FFFFFF !important;
-}
-.st-key-tabbar .stButton > button[kind="primary"] {
-    background: #FFFFFF !important;
+div[class*="st-key-tabgroup_active_"] .stButton > button {
     color: var(--text-dark) !important;
     font-weight: 700 !important;
-    box-shadow: none !important;
+}
+div[class*="st-key-tabgroup_inactive_"] .stButton > button {
+    color: rgba(255,255,255,0.9) !important;
+}
+div[class*="st-key-tabgroup_"] .stButton > button:hover {
+    background: rgba(0,0,0,0.06) !important;
+}
+/* 닫기(x) 버튼만 호버 시 빨간색으로 강조 */
+div[class*="st-key-tabgroup_"] [data-testid="column"]:last-child .stButton > button {
+    font-size: .8rem !important;
+    padding: .5rem .7rem !important;
+}
+div[class*="st-key-tabgroup_"] [data-testid="column"]:last-child .stButton > button:hover {
+    background: rgba(239,68,68,0.85) !important;
+    color: #FFFFFF !important;
 }
 
 /* 카드 */
@@ -374,28 +377,26 @@ with st.container(key="app_frame"):
     # ── 탭 바 — 메뉴를 누르면 폴더처럼 열려서 쌓임 ──────────────
     with st.container(key="tabbar"):
         tabs = st.session_state["open_tabs"]
-        widths = []
-        for _ in tabs:
-            widths += [5, 1]
-        widths += [12]
-        tab_cols = st.columns(widths)
+        tab_cols = st.columns([3] * len(tabs) + [12])
         for i, label in enumerate(tabs):
             is_active = st.session_state["menu"] == label
-            with tab_cols[i * 2]:
-                if st.button(f"{MENU_ICON.get(label,'')} {label}", key=f"tabbtn_{i}",
-                             use_container_width=True,
-                             type="primary" if is_active else "secondary"):
-                    st.session_state["menu"] = label
-                    st.rerun()
-            with tab_cols[i * 2 + 1]:
-                if st.button("✕", key=f"tabclose_{i}", use_container_width=True,
-                             type="primary" if is_active else "secondary"):
-                    tabs.remove(label)
-                    if not tabs:
-                        tabs.append("표기사항 검수")
-                    if st.session_state["menu"] == label:
-                        st.session_state["menu"] = tabs[-1]
-                    st.rerun()
+            group_key = f"tabgroup_active_{i}" if is_active else f"tabgroup_inactive_{i}"
+            with tab_cols[i]:
+                with st.container(key=group_key):
+                    lbl_col, x_col = st.columns([5, 1])
+                    with lbl_col:
+                        if st.button(f"{MENU_ICON.get(label,'')} {label}", key=f"tabbtn_{i}",
+                                     use_container_width=True):
+                            st.session_state["menu"] = label
+                            st.rerun()
+                    with x_col:
+                        if st.button("✕", key=f"tabclose_{i}", use_container_width=True):
+                            tabs.remove(label)
+                            if not tabs:
+                                tabs.append("표기사항 검수")
+                            if st.session_state["menu"] == label:
+                                st.session_state["menu"] = tabs[-1]
+                            st.rerun()
 
     menu = st.session_state.get("menu", "표기사항 검수")
 
