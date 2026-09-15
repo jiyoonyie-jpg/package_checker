@@ -54,8 +54,11 @@ header[data-testid="stHeader"] {
 [data-testid="stMainBlockContainer"],
 div.block-container {
     padding-top: 1rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     margin-top: 0 !important;
     background: transparent !important;
+    max-width: 100% !important;
 }
 
 /* 앱 프레임 — 탭 바 + 본문 전체를 감싸는 단일 카드 */
@@ -64,6 +67,7 @@ div.block-container {
     border: 3px solid #C289BA !important;
     border-radius: 12px !important;
     padding: 0 1.2rem 1.2rem !important;
+    margin: 0 .8rem !important;
     overflow: hidden !important;
 }
 
@@ -136,21 +140,36 @@ button[aria-label*="sidebar" i] {
     margin: 0 -1.2rem 0 -1.2rem !important;
     width: calc(100% + 2.4rem) !important;
 }
-.st-key-tabbar [data-testid="column"] { padding: 0 2px !important; }
+.st-key-tabbar [data-testid="column"] { padding: 0 !important; }
+/* 라벨 버튼 + 닫기(x) 버튼을 하나의 폴더 탭처럼 붙여줌 */
+.st-key-tabbar [data-testid="column"]:nth-child(2n) {
+    margin-left: -10px !important;
+}
 .st-key-tabbar .stButton > button {
-    border-radius: 8px 8px 0 0 !important;
     border: none !important;
     font-weight: 500 !important;
-    padding: .5rem .9rem !important;
     transition: all .15s !important;
 }
+.st-key-tabbar [data-testid="column"]:nth-child(odd) .stButton > button {
+    border-radius: 10px 0 0 0 !important;
+    padding: .5rem .3rem .5rem 1rem !important;
+}
+.st-key-tabbar [data-testid="column"]:nth-child(2n) .stButton > button {
+    border-radius: 0 10px 0 0 !important;
+    padding: .5rem 1rem .5rem .3rem !important;
+    font-size: .85rem !important;
+}
+.st-key-tabbar [data-testid="column"]:nth-child(2n) .stButton > button:hover {
+    background: rgba(239,68,68,0.8) !important;
+    color: #FFFFFF !important;
+}
 .st-key-tabbar .stButton > button[kind="secondary"] {
-    background: transparent !important;
-    color: rgba(255,255,255,0.85) !important;
+    background: rgba(255,255,255,0.16) !important;
+    color: rgba(255,255,255,0.9) !important;
     box-shadow: none !important;
 }
 .st-key-tabbar .stButton > button[kind="secondary"]:hover {
-    background: rgba(255,255,255,0.15) !important;
+    background: rgba(255,255,255,0.28) !important;
     color: #FFFFFF !important;
 }
 .st-key-tabbar .stButton > button[kind="primary"] {
@@ -369,12 +388,14 @@ with st.container(key="app_frame"):
                     st.session_state["menu"] = label
                     st.rerun()
             with tab_cols[i * 2 + 1]:
-                if len(tabs) > 1:
-                    if st.button("✕", key=f"tabclose_{i}", use_container_width=True):
-                        tabs.remove(label)
-                        if st.session_state["menu"] == label:
-                            st.session_state["menu"] = tabs[-1]
-                        st.rerun()
+                if st.button("✕", key=f"tabclose_{i}", use_container_width=True,
+                             type="primary" if is_active else "secondary"):
+                    tabs.remove(label)
+                    if not tabs:
+                        tabs.append("표기사항 검수")
+                    if st.session_state["menu"] == label:
+                        st.session_state["menu"] = tabs[-1]
+                    st.rerun()
 
     menu = st.session_state.get("menu", "표기사항 검수")
 
