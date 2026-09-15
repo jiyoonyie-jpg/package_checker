@@ -9,7 +9,25 @@ def get_file_info(file_bytes: bytes, filename: str) -> dict:
         "extension": ext,
         "is_pdf": ext == "pdf",
         "is_image": ext in ("png", "jpg", "jpeg", "webp"),
+        "is_excel": ext in ("xlsx", "xls"),
     }
+
+def extract_excel_text(file_bytes: bytes) -> str:
+    """엑셀 시트의 셀 내용을 표 형태 텍스트로 추출합니다."""
+    try:
+        import io
+        from openpyxl import load_workbook
+        wb = load_workbook(io.BytesIO(file_bytes), data_only=True)
+        lines = []
+        for sheet in wb.worksheets:
+            lines.append(f"[시트: {sheet.title}]")
+            for row in sheet.iter_rows(values_only=True):
+                cells = [str(c) for c in row if c is not None]
+                if cells:
+                    lines.append(" | ".join(cells))
+        return "\n".join(lines) if lines else "(빈 엑셀 파일)"
+    except Exception as e:
+        return f"[엑셀 텍스트 추출 실패: {e}]"
 
 def image_to_base64(file_bytes: bytes, media_type: str = "image/png") -> str:
     return base64.b64encode(file_bytes).decode("utf-8")

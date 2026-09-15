@@ -9,8 +9,8 @@ def _client():
     return genai.Client(api_key=api_key)
 
 SYSTEM_PROMPT = """당신은 한국 식품위생법 및 식품 등의 표시기준 전문가입니다.
-정보표시면, 품목제조보고서 등 함께 제공되는 여러 문서 이미지를 종합적으로 분석하여
-필수 표기사항을 검수하고, 반드시 아래 JSON 형식으로만 응답하세요.
+정보표시면, 품목제조보고서 등 함께 제공되는 여러 문서(이미지 또는 엑셀에서 추출한 텍스트)를
+종합적으로 분석하여 필수 표기사항을 검수하고, 반드시 아래 JSON 형식으로만 응답하세요.
 문서가 여러 장이면 서로 다른 문서의 내용을 교차 검증해 하나의 결과로 합쳐서 판단하세요.
 마크다운 코드블록 없이 순수 JSON만 출력하세요.
 
@@ -71,11 +71,14 @@ def _parse_result(text: str) -> dict:
         }
 
 def analyze_images_with_gemini(images: list, context: str = "",
-                                design_b64: str = None, design_media_type: str = None) -> dict:
+                                design_b64: str = None, design_media_type: str = None,
+                                extra_texts: list = None) -> dict:
     """images: [{"data": base64_str, "mime_type": "image/png"}, ...] — 정보표시면/품목제조보고서 등
-    여러 문서를 한 번에 넘기면 함께 분석합니다."""
+    여러 문서를 한 번에 넘기면 함께 분석합니다.
+    extra_texts: [{"filename": str, "text": str}, ...] — 엑셀 등 텍스트로 추출된 문서."""
     client = _client()
-    doc_note = f" (문서 {len(images)}장을 함께 검토)" if len(images) > 1 else ""
+    total_docs = len(images) + len(extra_texts or [])
+    doc_note = f" (문서 {total_docs}건을 함께 검토)" if total_docs > 1 else ""
     user_msg = f"아래 패키지 문서{doc_note}를 식품표기 기준으로 검수해주세요.\n추가 컨텍스트: {context}" if context else f"아래 패키지 문서{doc_note}를 식품표기 기준으로 검수해주세요."
     parts = [
         types.Part(text=SYSTEM_PROMPT),
@@ -83,6 +86,8 @@ def analyze_images_with_gemini(images: list, context: str = "",
     ]
     for img in images:
         parts.append(types.Part(inline_data=types.Blob(mime_type=img["mime_type"], data=img["data"])))
+    for et in (extra_texts or []):
+        parts.append(types.Part(text=f"[엑셀 문서: {et['filename']}]\n{et['text']}"))
     if design_b64:
         parts.append(types.Part(text="아래는 참고용 디자인 시안 이미지입니다. 위 문서들과 제품명/문구/수치 등이 일치하는지 비교하여 불일치 사항을 design_consistency에 기록하세요."))
         parts.append(types.Part(inline_data=types.Blob(mime_type=design_media_type, data=design_b64)))

@@ -2,7 +2,7 @@ import streamlit as st
 import json, os, base64, sys, random
 sys.path.insert(0, os.path.dirname(__file__))
 
-from utils.extractor import pdf_to_images, image_to_base64, detect_barcodes, get_file_info
+from utils.extractor import pdf_to_images, image_to_base64, detect_barcodes, get_file_info, extract_excel_text
 from utils.analyzer import analyze_images_with_gemini, generate_report_text
 from utils.designer import generate_package_design, refine_design_description
 from utils.reporter import export_to_excel
@@ -270,14 +270,14 @@ div[class*="st-key-card_"] {
     filter: brightness(1.05);
 }
 
-/* 검수 시작 버튼 — 탭 바와 같은 자주색 */
+/* 검수 시작 버튼 — 타이틀바보다 진한 자주색 */
 .st-key-card_start .stButton > button[kind="primary"] {
-    background: #C289BA !important;
-    box-shadow: 0 4px 14px rgba(194,137,186,0.4) !important;
+    background: #9C5A87 !important;
+    box-shadow: 0 4px 14px rgba(156,90,135,0.45) !important;
 }
 .st-key-card_start .stButton > button[kind="primary"]:hover {
-    background: #B073A3 !important;
-    box-shadow: 0 6px 18px rgba(194,137,186,0.5) !important;
+    background: #874A75 !important;
+    box-shadow: 0 6px 18px rgba(156,90,135,0.55) !important;
     filter: none;
 }
 
@@ -434,7 +434,7 @@ if menu == "표기사항 검수":
             st.markdown("##### 📋 정보표시면 업로드")
             st.caption("정보표시면, 품목제조보고서 등 여러 문서를 함께 올리면 한 번에 분석합니다.")
             info_uploaded_list = st.file_uploader("정보표시면 (필수)",
-                type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 원재료명/영양성분표/품목제조보고서 등",
+                type=["pdf","png","jpg","jpeg","webp","xlsx","xls"], help="최대 50MB · 원재료명/영양성분표/품목제조보고서 등 (엑셀 가능)",
                 label_visibility="collapsed", key="info_uploader", accept_multiple_files=True)
 
             if info_uploaded_list:
@@ -442,11 +442,12 @@ if menu == "표기사항 검수":
                     ub = uf.getvalue()
                     ufi = get_file_info(ub, uf.name)
                     chip_col, view_col = st.columns([4, 1])
+                    file_icon = "📊" if ufi["is_excel"] else "📄"
                     with chip_col:
                         st.markdown(f"""
                         <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
                           padding:.5rem .8rem;font-size:.85rem;margin:.4rem 0">
-                          📄 <b>{ufi['filename']}</b>
+                          {file_icon} <b>{ufi['filename']}</b>
                           <span style="color:#7C3AED">· {ufi['size_kb']} KB</span>
                         </div>""", unsafe_allow_html=True)
                     with view_col:
@@ -455,6 +456,8 @@ if menu == "표기사항 검수":
                                 imgs = pdf_to_images(ub)
                                 if imgs and "error" not in imgs[0]:
                                     st.image(imgs[0]["bytes"], use_container_width=True)
+                            elif ufi["is_excel"]:
+                                st.text(extract_excel_text(ub))
                             else:
                                 st.image(ub, use_container_width=True)
 
@@ -548,6 +551,7 @@ if menu == "표기사항 검수":
                                 design_b64, design_mt = image_to_base64(design_bytes, dmt), dmt
 
                         info_images = []
+                        info_texts = []
                         for uf in info_uploaded_list:
                             ub = uf.getvalue()
                             ufi = get_file_info(ub, uf.name)
@@ -555,12 +559,14 @@ if menu == "표기사항 검수":
                                 upages = pdf_to_images(ub)
                                 if upages and "error" not in upages[0]:
                                     info_images.append({"data": upages[0]["base64"], "mime_type": "image/png"})
+                            elif ufi["is_excel"]:
+                                info_texts.append({"filename": ufi["filename"], "text": extract_excel_text(ub)})
                             else:
                                 umt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
                                        "png":"image/png","webp":"image/webp"}.get(ufi["extension"],"image/png")
                                 info_images.append({"data": image_to_base64(ub, umt), "mime_type": umt})
 
-                        result = analyze_images_with_gemini(info_images, ctx, design_b64, design_mt)
+                        result = analyze_images_with_gemini(info_images, ctx, design_b64, design_mt, info_texts)
 
                         first_bytes = info_uploaded_list[0].getvalue()
                         first_fi = get_file_info(first_bytes, info_uploaded_list[0].name)
