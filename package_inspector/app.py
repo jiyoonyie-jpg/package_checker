@@ -61,6 +61,7 @@ header[data-testid="stHeader"] {
     margin: 1rem 1.5rem 1.5rem !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    scrollbar-gutter: stable !important;
     box-sizing: border-box !important;
     box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 2px 10px rgba(0,0,0,0.06) !important;
 }
