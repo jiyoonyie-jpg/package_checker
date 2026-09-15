@@ -52,12 +52,14 @@ header[data-testid="stHeader"] {
 }
 /* 앱 프레임 — Streamlit의 실제 본문 래퍼(.main)에 직접 테두리를 둘러서
    중첩 컨테이너의 폭 계산에 좌우되지 않도록 함 */
+[data-testid="stMain"],
 .main {
     background: #FFFFFF !important;
     border: 8px solid #C289BA !important;
     border-radius: 14px !important;
     margin: 0 1.5rem !important;
     overflow: hidden !important;
+    box-sizing: border-box !important;
 }
 .main .block-container,
 [data-testid="stMainBlockContainer"],
@@ -68,10 +70,10 @@ div.block-container {
     max-width: 100% !important;
 }
 
-/* 사이드바 항상 펼쳐진 상태로 고정 */
+/* 사이드바 항상 펼쳐진 상태로 고정 (본문 공간 확보를 위해 폭을 살짝 줄임) */
 [data-testid="stSidebar"] {
-    min-width: 270px !important;
-    width: 270px !important;
+    min-width: 220px !important;
+    width: 220px !important;
     transform: none !important;
     margin-left: 0 !important;
     visibility: visible !important;
@@ -80,8 +82,8 @@ div.block-container {
 [data-testid="stSidebar"][aria-expanded="false"] {
     transform: none !important;
     margin-left: 0 !important;
-    min-width: 270px !important;
-    width: 270px !important;
+    min-width: 220px !important;
+    width: 220px !important;
 }
 [data-testid="collapsedControl"],
 section[data-testid="stSidebarCollapsedControl"],
