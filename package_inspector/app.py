@@ -25,17 +25,34 @@ html, body, [class*="css"] {
     background-color: #F5F3FF;
 }
 
-/* Streamlit 기본 요소 숨기기 (토글 버튼은 유지) */
+/* Streamlit 기본 요소 숨기기 */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-[data-testid="stToolbar"] {display: none !important;}
 [data-testid="stDecoration"] {display: none !important;}
 [data-testid="stStatusWidget"] {display: none !important;}
 .stDeployButton {display: none !important;}
-/* 헤더는 투명하게만 — 토글 버튼 살림 */
+
+/* 헤더 투명화 (토글 버튼 영역은 살림) */
 header[data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
+    height: 3rem !important;
+}
+/* 툴바(공유/깃허브 버튼)만 숨김 */
+[data-testid="stToolbar"] {visibility: hidden !important;}
+
+/* 사이드바 토글 버튼 강제 표시 */
+[data-testid="collapsedControl"],
+section[data-testid="stSidebarCollapsedControl"],
+.st-emotion-cache-1lna757,
+button[title="Collapse sidebar"],
+button[title="Expand sidebar"],
+button[aria-label="Collapse sidebar"],
+button[aria-label="Expand sidebar"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 9999 !important;
 }
 
 /* 사이드바 — 그라디언트 + 노이즈 텍스처 */
