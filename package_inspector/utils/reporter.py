@@ -116,6 +116,27 @@ def export_to_excel(result: dict, file_info: dict) -> bytes:
         ws3.row_dimensions[r].height = 18
         r += 1
 
+    # ── Sheet 4: 오탈자/맞춤법 ──────────────────────
+    typos = result.get("typos", [])
+    if typos:
+        ws4 = wb.create_sheet("오탈자")
+        ws4.column_dimensions["A"].width = 20
+        ws4.column_dimensions["B"].width = 25
+        ws4.column_dimensions["C"].width = 40
+        ws4.column_dimensions["D"].width = 30
+        for c, h in enumerate(["위치", "표기된 문구", "문제 설명", "수정 제안"], 1):
+            cell = ws4.cell(row=1, column=c, value=h)
+            cell.fill = fill_h
+            cell.font = Font(color="FFFFFF", bold=True)
+            cell.border = _border()
+        for r4, t in enumerate(typos, start=2):
+            for c, val in enumerate([t.get("location", ""), t.get("found_text", ""),
+                                      t.get("issue", ""), t.get("suggestion", "")], 1):
+                cell = ws4.cell(row=r4, column=c, value=val)
+                cell.fill = PatternFill("solid", fgColor="FFF3E0")
+                cell.border = _border()
+            ws4.row_dimensions[r4].height = 18
+
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

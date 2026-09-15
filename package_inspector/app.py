@@ -259,11 +259,18 @@ div[class*="st-key-card_"] {
     filter: none;
 }
 
-/* 파일 업로더 */
+/* 파일 업로더 — 드롭존 자체를 크게 키워서 전체가 업로드 가능한 영역이 되도록 */
 [data-testid="stFileUploader"] {
     border: 2px dashed #B4A7F0 !important;
     border-radius: 14px !important;
     background: rgba(255,255,255,0.55) !important;
+}
+[data-testid="stFileUploaderDropzone"] {
+    min-height: 170px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 /* 요약 박스 */
@@ -438,13 +445,6 @@ with st.container(key="app_frame"):
                                 st.code(f"{bc['type']}: {bc['data']}")
                         else:
                             st.info("바코드 자동 감지 불가 (AI가 직접 확인)")
-                else:
-                    st.markdown("""
-                    <div style="height:180px;display:flex;align-items:center;justify-content:center;
-                      background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
-                      <div style="font-size:2.5rem">📋</div>
-                      <div style="font-size:.88rem">원재료명/영양성분표 등 정보표시면을 업로드해주세요</div>
-                    </div>""", unsafe_allow_html=True)
 
         with col_design:
             with st.container(key="card_design_upload"):
@@ -472,14 +472,6 @@ with st.container(key="app_frame"):
                                     st.image(imgs[0]["bytes"], use_container_width=True)
                             else:
                                 st.image(design_bytes, use_container_width=True)
-                else:
-                    st.markdown("""
-                    <div style="height:180px;display:flex;align-items:center;justify-content:center;
-                      background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
-                      <div style="font-size:2.5rem">🎨</div>
-                      <div style="font-size:.88rem">승인된 디자인 시안을 업로드해주세요</div>
-                    </div>""", unsafe_allow_html=True)
-
         if "result" in st.session_state:
             _top_result = st.session_state["result"]
             _top_score = _top_result.get("overall_score", 0)
@@ -619,6 +611,17 @@ with st.container(key="app_frame"):
                         <div class="violation-card v-warn">
                           <div style="font-size:.78rem;font-weight:600">🔍 {d.get('item','')}</div>
                           <div style="margin-top:.2rem">{d.get('issue','')}</div>
+                        </div>""", unsafe_allow_html=True)
+
+            if result.get("typos"):
+                with st.container(key="card_typos"):
+                    st.markdown(f"##### ✏️ 오탈자/맞춤법 ({len(result['typos'])}건)")
+                    for t in result["typos"]:
+                        st.markdown(f"""
+                        <div class="violation-card v-medium">
+                          <div style="font-size:.78rem;font-weight:600">✏️ {t.get('location','')} · "{t.get('found_text','')}"</div>
+                          <div style="margin-top:.2rem">{t.get('issue','')}</div>
+                          <div style="margin-top:.2rem;color:#7C3AED">💡 제안: {t.get('suggestion','')}</div>
                         </div>""", unsafe_allow_html=True)
 
             st.markdown("##### 📥 내보내기")

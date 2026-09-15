@@ -38,9 +38,19 @@ SYSTEM_PROMPT = """당신은 한국 식품위생법 및 식품 등의 표시기�
   ],
   "design_consistency": [
     {"item": "항목명", "issue": "정보표시면과 디자인 시안이 다른 점"}
+  ],
+  "typos": [
+    {"location": "오탈자가 있는 위치 (예: 원재료명, 보관방법 등)", "found_text": "실제 표기된 문구", "issue": "문제 설명", "suggestion": "수정 제안"}
   ]
 }
-디자인 시안 이미지가 함께 제공된 경우에만 design_consistency를 채우고, 없으면 빈 배열로 두세요."""
+디자인 시안 이미지가 함께 제공된 경우에만 design_consistency를 채우고, 없으면 빈 배열로 두세요.
+
+typos에는 기본적인 맞춤법/오탈자 문제를 찾아 기록하세요. 다음을 반드시 확인하세요:
+- 쉼표(,) 다음에 띄어쓰기가 빠진 경우
+- 문장이 마침표 없이 끝나는 경우
+- 브랜드명이나 제품명의 영문 이니셜/철자 오타 (예: 같은 브랜드명이 문서마다 다르게 표기됨)
+- 띄어쓰기 오류, 중복 공백, 오타로 보이는 단어
+문제가 없으면 typos는 빈 배열로 두세요."""
 
 def _parse_result(text: str) -> dict:
     text = text.strip()
@@ -57,6 +67,7 @@ def _parse_result(text: str) -> dict:
             "violations": [],
             "warnings": [],
             "design_consistency": [],
+            "typos": [],
         }
 
 def analyze_images_with_gemini(images: list, context: str = "",
@@ -107,4 +118,9 @@ def generate_report_text(result: dict, file_info: dict) -> str:
         lines.append(f"💡 {w.get('field')}: {w.get('message')}")
     if not result.get("warnings"):
         lines.append("주의사항 없음")
+    lines += ["", "## 오탈자/맞춤법"]
+    for t in result.get("typos", []):
+        lines.append(f"✏ [{t.get('location')}] \"{t.get('found_text')}\" — {t.get('issue')} (제안: {t.get('suggestion')})")
+    if not result.get("typos"):
+        lines.append("발견된 오탈자 없음")
     return "\n".join(lines)
