@@ -70,7 +70,7 @@ def analyze_image_with_gemini(img_b64: str, media_type: str, context: str = "",
         parts.append(types.Part(text="아래는 참고용 디자인 시안 이미지입니다. 위 정보표시면과 제품명/문구/수치 등이 일치하는지 비교하여 불일치 사항을 design_consistency에 기록하세요."))
         parts.append(types.Part(inline_data=types.Blob(mime_type=design_media_type, data=design_b64)))
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         contents=[types.Content(role="user", parts=parts)]
     )
     return _parse_result(response.text)

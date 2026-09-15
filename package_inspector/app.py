@@ -146,7 +146,8 @@ button[aria-label*="sidebar" i] {
 }
 
 /* 카드 */
-.card {
+.card,
+div[class*="st-key-card_"] {
     background: rgba(255,255,255,0.72);
     backdrop-filter: blur(6px);
     border: 1px solid rgba(139,124,246,0.18);
@@ -357,123 +358,120 @@ if menu == "표기사항 검수":
     col_info, col_design = st.columns([1, 1], gap="medium")
 
     with col_info:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("##### 📋 정보표시면 업로드")
-        info_uploaded = st.file_uploader("정보표시면 (필수)",
-            type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 원재료명/영양성분표 등 표기 이미지",
-            label_visibility="collapsed", key="info_uploader")
+        with st.container(key="card_info_upload"):
+            st.markdown("##### 📋 정보표시면 업로드")
+            info_uploaded = st.file_uploader("정보표시면 (필수)",
+                type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 원재료명/영양성분표 등 표기 이미지",
+                label_visibility="collapsed", key="info_uploader")
 
-        if info_uploaded:
-            info_bytes = info_uploaded.getvalue()
-            info_fi = get_file_info(info_bytes, info_uploaded.name)
-            if info_fi["is_pdf"]:
-                imgs = pdf_to_images(info_bytes)
-                if imgs and "error" not in imgs[0]:
-                    st.image(imgs[0]["bytes"], use_container_width=True)
+            if info_uploaded:
+                info_bytes = info_uploaded.getvalue()
+                info_fi = get_file_info(info_bytes, info_uploaded.name)
+                if info_fi["is_pdf"]:
+                    imgs = pdf_to_images(info_bytes)
+                    if imgs and "error" not in imgs[0]:
+                        st.image(imgs[0]["bytes"], use_container_width=True)
+                else:
+                    st.image(info_bytes, use_container_width=True)
+                st.markdown(f"""
+                <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
+                  padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
+                  📄 <b>{info_fi['filename']}</b> &nbsp;·&nbsp;
+                  <span style="color:#7C3AED">{info_fi['size_kb']} KB</span> &nbsp;·&nbsp;
+                  {info_fi['extension'].upper()}
+                </div>""", unsafe_allow_html=True)
+
+                if st.session_state.get("check_barcode", True) and info_fi["is_image"]:
+                    with st.spinner("바코드 감지 중..."):
+                        barcodes = detect_barcodes(info_bytes)
+                        if barcodes and "error" not in barcodes[0]:
+                            st.success(f"✅ 바코드 {len(barcodes)}개 감지됨")
+                            for bc in barcodes:
+                                st.code(f"{bc['type']}: {bc['data']}")
+                        else:
+                            st.info("바코드 자동 감지 불가 (AI가 직접 확인)")
             else:
-                st.image(info_bytes, use_container_width=True)
-            st.markdown(f"""
-            <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
-              padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
-              📄 <b>{info_fi['filename']}</b> &nbsp;·&nbsp;
-              <span style="color:#7C3AED">{info_fi['size_kb']} KB</span> &nbsp;·&nbsp;
-              {info_fi['extension'].upper()}
-            </div>""", unsafe_allow_html=True)
-
-            if st.session_state.get("check_barcode", True) and info_fi["is_image"]:
-                with st.spinner("바코드 감지 중..."):
-                    barcodes = detect_barcodes(info_bytes)
-                    if barcodes and "error" not in barcodes[0]:
-                        st.success(f"✅ 바코드 {len(barcodes)}개 감지됨")
-                        for bc in barcodes:
-                            st.code(f"{bc['type']}: {bc['data']}")
-                    else:
-                        st.info("바코드 자동 감지 불가 (AI가 직접 확인)")
-        else:
-            st.markdown("""
-            <div style="height:180px;display:flex;align-items:center;justify-content:center;
-              background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
-              <div style="font-size:2.5rem">📋</div>
-              <div style="font-size:.88rem">원재료명/영양성분표 등 정보표시면을 업로드해주세요</div>
-            </div>""", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("""
+                <div style="height:180px;display:flex;align-items:center;justify-content:center;
+                  background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
+                  <div style="font-size:2.5rem">📋</div>
+                  <div style="font-size:.88rem">원재료명/영양성분표 등 정보표시면을 업로드해주세요</div>
+                </div>""", unsafe_allow_html=True)
 
     with col_design:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("##### 🎨 디자인 시안 업로드 (선택)")
-        design_uploaded = st.file_uploader("디자인 시안 (선택)",
-            type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 승인된 디자인 시안과 비교 검증",
-            label_visibility="collapsed", key="design_uploader")
+        with st.container(key="card_design_upload"):
+            st.markdown("##### 🎨 디자인 시안 업로드 (선택)")
+            design_uploaded = st.file_uploader("디자인 시안 (선택)",
+                type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 승인된 디자인 시안과 비교 검증",
+                label_visibility="collapsed", key="design_uploader")
 
-        if design_uploaded:
-            design_bytes = design_uploaded.getvalue()
-            design_fi = get_file_info(design_bytes, design_uploaded.name)
-            if design_fi["is_pdf"]:
-                imgs = pdf_to_images(design_bytes)
-                if imgs and "error" not in imgs[0]:
-                    st.image(imgs[0]["bytes"], use_container_width=True)
+            if design_uploaded:
+                design_bytes = design_uploaded.getvalue()
+                design_fi = get_file_info(design_bytes, design_uploaded.name)
+                if design_fi["is_pdf"]:
+                    imgs = pdf_to_images(design_bytes)
+                    if imgs and "error" not in imgs[0]:
+                        st.image(imgs[0]["bytes"], use_container_width=True)
+                else:
+                    st.image(design_bytes, use_container_width=True)
+                st.markdown(f"""
+                <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
+                  padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
+                  📄 <b>{design_fi['filename']}</b> &nbsp;·&nbsp;
+                  <span style="color:#7C3AED">{design_fi['size_kb']} KB</span> &nbsp;·&nbsp;
+                  {design_fi['extension'].upper()}
+                </div>""", unsafe_allow_html=True)
             else:
-                st.image(design_bytes, use_container_width=True)
-            st.markdown(f"""
-            <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
-              padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
-              📄 <b>{design_fi['filename']}</b> &nbsp;·&nbsp;
-              <span style="color:#7C3AED">{design_fi['size_kb']} KB</span> &nbsp;·&nbsp;
-              {design_fi['extension'].upper()}
-            </div>""", unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div style="height:180px;display:flex;align-items:center;justify-content:center;
-              background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
-              <div style="font-size:2.5rem">🎨</div>
-              <div style="font-size:.88rem">승인된 디자인 시안이 있다면 업로드해주세요 (선택)</div>
-            </div>""", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("""
+                <div style="height:180px;display:flex;align-items:center;justify-content:center;
+                  background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
+                  <div style="font-size:2.5rem">🎨</div>
+                  <div style="font-size:.88rem">승인된 디자인 시안이 있다면 업로드해주세요 (선택)</div>
+                </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    if st.button("🚀 검수 시작", type="primary", use_container_width=True):
-        if not info_uploaded:
-            st.error("📋 정보표시면 파일을 먼저 업로드해주세요.")
-        elif not os.environ.get("GEMINI_API_KEY"):
-            st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
-        else:
-            with st.spinner("Gemini AI가 분석 중입니다..."):
-                try:
-                    info_bytes = info_uploaded.getvalue()
-                    info_fi = get_file_info(info_bytes, info_uploaded.name)
-                    et = st.session_state.get("export_type", "내수용 (국내)")
-                    ec = st.session_state.get("extra_context", "")
-                    ctx = f"[수출 구분: {et}]" + (f" {ec}" if ec else "")
+    with st.container(key="card_start"):
+        if st.button("🚀 검수 시작", type="primary", use_container_width=True):
+            if not info_uploaded:
+                st.error("📋 정보표시면 파일을 먼저 업로드해주세요.")
+            elif not os.environ.get("GEMINI_API_KEY"):
+                st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
+            else:
+                with st.spinner("Gemini AI가 분석 중입니다..."):
+                    try:
+                        info_bytes = info_uploaded.getvalue()
+                        info_fi = get_file_info(info_bytes, info_uploaded.name)
+                        et = st.session_state.get("export_type", "내수용 (국내)")
+                        ec = st.session_state.get("extra_context", "")
+                        ctx = f"[수출 구분: {et}]" + (f" {ec}" if ec else "")
 
-                    design_b64, design_mt = None, None
-                    if design_uploaded:
-                        design_bytes = design_uploaded.getvalue()
-                        design_fi = get_file_info(design_bytes, design_uploaded.name)
-                        if design_fi["is_pdf"]:
-                            dpages = pdf_to_images(design_bytes)
-                            if dpages and "error" not in dpages[0]:
-                                design_b64, design_mt = dpages[0]["base64"], "image/png"
+                        design_b64, design_mt = None, None
+                        if design_uploaded:
+                            design_bytes = design_uploaded.getvalue()
+                            design_fi = get_file_info(design_bytes, design_uploaded.name)
+                            if design_fi["is_pdf"]:
+                                dpages = pdf_to_images(design_bytes)
+                                if dpages and "error" not in dpages[0]:
+                                    design_b64, design_mt = dpages[0]["base64"], "image/png"
+                            else:
+                                dmt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
+                                       "png":"image/png","webp":"image/webp"}.get(design_fi["extension"],"image/png")
+                                design_b64, design_mt = image_to_base64(design_bytes, dmt), dmt
+
+                        if info_fi["is_pdf"]:
+                            pages = pdf_to_images(info_bytes)
+                            result = analyze_pdf_pages(pages, ctx, design_b64, design_mt)
                         else:
-                            dmt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
-                                   "png":"image/png","webp":"image/webp"}.get(design_fi["extension"],"image/png")
-                            design_b64, design_mt = image_to_base64(design_bytes, dmt), dmt
+                            mt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
+                                  "png":"image/png","webp":"image/webp"}.get(info_fi["extension"],"image/png")
+                            result = analyze_image_with_gemini(image_to_base64(info_bytes, mt), mt, ctx, design_b64, design_mt)
 
-                    if info_fi["is_pdf"]:
-                        pages = pdf_to_images(info_bytes)
-                        result = analyze_pdf_pages(pages, ctx, design_b64, design_mt)
-                    else:
-                        mt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
-                              "png":"image/png","webp":"image/webp"}.get(info_fi["extension"],"image/png")
-                        result = analyze_image_with_gemini(image_to_base64(info_bytes, mt), mt, ctx, design_b64, design_mt)
-
-                    st.session_state.update({"result": result, "fi": info_fi,
-                        "file_bytes": info_bytes, "is_pdf": info_fi["is_pdf"],
-                        "has_design": design_uploaded is not None})
-                    st.success("✅ 검수 완료!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"오류: {e}")
-    st.markdown('</div>', unsafe_allow_html=True)
+                        st.session_state.update({"result": result, "fi": info_fi,
+                            "file_bytes": info_bytes, "is_pdf": info_fi["is_pdf"],
+                            "has_design": design_uploaded is not None})
+                        st.success("✅ 검수 완료!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"오류: {e}")
 
     # ── 결과 ────────────────────────────────────────────────
     if "result" in st.session_state:
@@ -507,61 +505,58 @@ if menu == "표기사항 검수":
         }
         cf, cv = st.columns([1,1], gap="medium")
         with cf:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown("##### 📋 항목별 결과")
-            detected = result.get("detected_fields", {})
-            for fid, fname in field_names.items():
-                fd = detected.get(fid, {})
-                found = fd.get("found", False)
-                issue = fd.get("issue")
-                val = str(fd.get("value") or "")
-                badge = "badge-ok" if found else "badge-fail"
-                row = "field-ok" if found else "field-fail"
-                val_html = f'<span style="color:#888;font-size:.78rem"> — {val[:26]}</span>' if val and found else ""
-                issue_html = f'<br><span style="color:#F43F5E;font-size:.78rem">⚠ {issue}</span>' if issue and issue not in ("null", None) else ""
-                st.markdown(f"""
-                <div class="field-row {row}">
-                  <span class="field-badge {'badge-ok' if found else 'badge-fail'}">{'✓' if found else '✗'}</span>
-                  <span><b>{fname}</b>{val_html}{issue_html}</span>
-                </div>""", unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(key="card_fields"):
+                st.markdown("##### 📋 항목별 결과")
+                detected = result.get("detected_fields", {})
+                for fid, fname in field_names.items():
+                    fd = detected.get(fid, {})
+                    found = fd.get("found", False)
+                    issue = fd.get("issue")
+                    val = str(fd.get("value") or "")
+                    badge = "badge-ok" if found else "badge-fail"
+                    row = "field-ok" if found else "field-fail"
+                    val_html = f'<span style="color:#888;font-size:.78rem"> — {val[:26]}</span>' if val and found else ""
+                    issue_html = f'<br><span style="color:#F43F5E;font-size:.78rem">⚠ {issue}</span>' if issue and issue not in ("null", None) else ""
+                    st.markdown(f"""
+                    <div class="field-row {row}">
+                      <span class="field-badge {'badge-ok' if found else 'badge-fail'}">{'✓' if found else '✗'}</span>
+                      <span><b>{fname}</b>{val_html}{issue_html}</span>
+                    </div>""", unsafe_allow_html=True)
 
         with cv:
-            violations = result.get("violations", [])
-            warnings = result.get("warnings", [])
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown(f"##### ⚠️ 위반 사항 ({len(violations)}건)")
-            if violations:
-                for v in violations:
-                    sev = v.get("severity","medium")
-                    sl = {"high":"🔴 긴급","medium":"🟡 주의","low":"🟢 경미"}.get(sev,sev)
-                    st.markdown(f"""
-                    <div class="violation-card v-{sev}">
-                      <div style="font-size:.78rem;font-weight:600">{sl} · {v.get('field','')}</div>
-                      <div style="margin-top:.2rem">{v.get('message','')}</div>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.success("위반 사항이 없습니다!")
-            if warnings:
-                st.markdown(f"##### 💡 주의사항 ({len(warnings)}건)")
-                for w in warnings:
-                    st.markdown(f"""
-                    <div class="violation-card v-warn">
-                      <div style="font-size:.78rem;font-weight:600">💡 {w.get('field','')}</div>
-                      <div style="margin-top:.2rem">{w.get('message','')}</div>
-                    </div>""", unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(key="card_violations"):
+                violations = result.get("violations", [])
+                warnings = result.get("warnings", [])
+                st.markdown(f"##### ⚠️ 위반 사항 ({len(violations)}건)")
+                if violations:
+                    for v in violations:
+                        sev = v.get("severity","medium")
+                        sl = {"high":"🔴 긴급","medium":"🟡 주의","low":"🟢 경미"}.get(sev,sev)
+                        st.markdown(f"""
+                        <div class="violation-card v-{sev}">
+                          <div style="font-size:.78rem;font-weight:600">{sl} · {v.get('field','')}</div>
+                          <div style="margin-top:.2rem">{v.get('message','')}</div>
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.success("위반 사항이 없습니다!")
+                if warnings:
+                    st.markdown(f"##### 💡 주의사항 ({len(warnings)}건)")
+                    for w in warnings:
+                        st.markdown(f"""
+                        <div class="violation-card v-warn">
+                          <div style="font-size:.78rem;font-weight:600">💡 {w.get('field','')}</div>
+                          <div style="margin-top:.2rem">{w.get('message','')}</div>
+                        </div>""", unsafe_allow_html=True)
 
         if st.session_state.get("has_design") and result.get("design_consistency"):
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown(f"##### 🔍 디자인 시안 대비 일치성 ({len(result['design_consistency'])}건)")
-            for d in result["design_consistency"]:
-                st.markdown(f"""
-                <div class="violation-card v-warn">
-                  <div style="font-size:.78rem;font-weight:600">🔍 {d.get('item','')}</div>
-                  <div style="margin-top:.2rem">{d.get('issue','')}</div>
-                </div>""", unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(key="card_design_consistency"):
+                st.markdown(f"##### 🔍 디자인 시안 대비 일치성 ({len(result['design_consistency'])}건)")
+                for d in result["design_consistency"]:
+                    st.markdown(f"""
+                    <div class="violation-card v-warn">
+                      <div style="font-size:.78rem;font-weight:600">🔍 {d.get('item','')}</div>
+                      <div style="margin-top:.2rem">{d.get('issue','')}</div>
+                    </div>""", unsafe_allow_html=True)
 
         st.markdown("##### 📥 내보내기")
         d1, d2, d3 = st.columns(3)
@@ -586,47 +581,45 @@ if menu == "표기사항 검수":
 # 페이지 2 — 패키지 디자인 생성
 # ══════════════════════════════════════════════════════════
 elif menu == "패키지 디자인 생성":
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown("##### 🎨 패키지 디자인 AI 생성")
-    st.markdown("<span style='font-size:.9rem;color:#7C3AED'>원하는 패키지 디자인을 자유롭게 설명해주세요. AI가 이미지를 생성합니다.</span>", unsafe_allow_html=True)
+    with st.container(key="card_design_input"):
+        st.markdown("##### 🎨 패키지 디자인 AI 생성")
+        st.markdown("<span style='font-size:.9rem;color:#7C3AED'>원하는 패키지 디자인을 자유롭게 설명해주세요. AI가 이미지를 생성합니다.</span>", unsafe_allow_html=True)
 
-    design_input = st.text_area(
-        "디자인 설명",
-        value=st.session_state.get("design_prompt", ""),
-        height=250,
-        placeholder=(
-            "예시:\n"
-            "가로로 긴 직사각형의 인스턴트 커피 패키지\n"
-            "제품명은 '커피빈 리치 블렌드 커피믹스'\n"
-            "입수량 20STICKS\n"
-            "색상은 노란색 배경에 보라색으로 포인트. 캐릭터가 있으면 좋겠어."
-        ),
-        label_visibility="collapsed"
-    )
+        design_input = st.text_area(
+            "디자인 설명",
+            value=st.session_state.get("design_prompt", ""),
+            height=250,
+            placeholder=(
+                "예시:\n"
+                "가로로 긴 직사각형의 인스턴트 커피 패키지\n"
+                "제품명은 '커피빈 리치 블렌드 커피믹스'\n"
+                "입수량 20STICKS\n"
+                "색상은 노란색 배경에 보라색으로 포인트. 캐릭터가 있으면 좋겠어."
+            ),
+            label_visibility="collapsed"
+        )
 
-    col_opt1, col_opt2 = st.columns(2)
-    with col_opt1:
-        show_brief = st.checkbox("디자인 브리프 먼저 생성 (추천)", value=True)
-    with col_opt2:
-        num_variants = st.selectbox("생성 수량", [1, 2, 3], index=0)
+        col_opt1, col_opt2 = st.columns(2)
+        with col_opt1:
+            show_brief = st.checkbox("디자인 브리프 먼저 생성 (추천)", value=True)
+        with col_opt2:
+            num_variants = st.selectbox("생성 수량", [1, 2, 3], index=0)
 
-    if st.button("✨ 디자인 생성", type="primary", use_container_width=True):
-        if not os.environ.get("GEMINI_API_KEY"):
-            st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
-        elif not design_input.strip():
-            st.warning("디자인 설명을 입력해주세요.")
-        else:
-            if show_brief:
-                with st.spinner("디자인 브리프 작성 중..."):
-                    st.session_state["design_brief"] = refine_design_description(design_input)
-            with st.spinner("AI가 패키지 이미지를 생성 중입니다... (30~60초 소요)"):
-                st.session_state["design_results"] = [
-                    generate_package_design(design_input, seed=random.randint(1,9999))
-                    for _ in range(num_variants)
-                ]
-            st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("✨ 디자인 생성", type="primary", use_container_width=True):
+            if not os.environ.get("GEMINI_API_KEY"):
+                st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
+            elif not design_input.strip():
+                st.warning("디자인 설명을 입력해주세요.")
+            else:
+                if show_brief:
+                    with st.spinner("디자인 브리프 작성 중..."):
+                        st.session_state["design_brief"] = refine_design_description(design_input)
+                with st.spinner("AI가 패키지 이미지를 생성 중입니다... (30~60초 소요)"):
+                    st.session_state["design_results"] = [
+                        generate_package_design(design_input, seed=random.randint(1,9999))
+                        for _ in range(num_variants)
+                    ]
+                st.rerun()
 
     if "design_brief" in st.session_state:
         with st.expander("📋 AI 디자인 브리프", expanded=True):
@@ -668,10 +661,9 @@ elif menu == "검수 기준 안내":
             </div>""", unsafe_allow_html=True)
 
     st.markdown("**자주 발생하는 위반 사례**")
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    for v in regs["common_violations"]:
-        st.markdown(f"- ⚠️ {v}")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container(key="card_common_violations"):
+        for v in regs["common_violations"]:
+            st.markdown(f"- ⚠️ {v}")
 
     st.markdown("**수출 국가별 추가 요건**")
     for country, fields in regs["export_requirements"].items():
