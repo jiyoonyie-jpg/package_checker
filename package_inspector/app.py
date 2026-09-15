@@ -118,31 +118,35 @@ button[aria-label*="sidebar" i] {
     color: var(--text-dark) !important;
 }
 
-/* 탭 바 — 메뉴를 누르면 폴더처럼 열려서 쌓이는 탭 */
-.st-key-tabbar { padding: .6rem .2rem 0 !important; }
+/* 탭 바 — 폴더 탭 스타일 (메뉴를 누르면 열려서 쌓임) */
+.st-key-tabbar {
+    background: #C289BA !important;
+    border-radius: 10px 10px 0 0 !important;
+    padding: .6rem .6rem 0 !important;
+    margin-bottom: 0 !important;
+}
 .st-key-tabbar [data-testid="column"] { padding: 0 2px !important; }
 .st-key-tabbar .stButton > button {
-    border-radius: 10px 10px 0 0 !important;
-    border: 1px solid rgba(139,124,246,0.22) !important;
-    border-bottom: none !important;
-    font-weight: 600 !important;
-    padding: .5rem .8rem !important;
+    border-radius: 8px 8px 0 0 !important;
+    border: none !important;
+    font-weight: 500 !important;
+    padding: .5rem .9rem !important;
     transition: all .15s !important;
 }
 .st-key-tabbar .stButton > button[kind="secondary"] {
-    background: rgba(255,255,255,0.45) !important;
-    color: #6B6485 !important;
+    background: transparent !important;
+    color: rgba(255,255,255,0.85) !important;
     box-shadow: none !important;
 }
 .st-key-tabbar .stButton > button[kind="secondary"]:hover {
-    background: rgba(255,255,255,0.85) !important;
-    color: var(--text-dark) !important;
+    background: rgba(255,255,255,0.15) !important;
+    color: #FFFFFF !important;
 }
 .st-key-tabbar .stButton > button[kind="primary"] {
     background: #FFFFFF !important;
     color: var(--text-dark) !important;
-    box-shadow: 0 -2px 10px rgba(139,124,246,0.12) !important;
-    border-color: rgba(139,124,246,0.35) !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
 }
 
 /* 카드 */
@@ -367,19 +371,22 @@ if menu == "표기사항 검수":
             if info_uploaded:
                 info_bytes = info_uploaded.getvalue()
                 info_fi = get_file_info(info_bytes, info_uploaded.name)
-                if info_fi["is_pdf"]:
-                    imgs = pdf_to_images(info_bytes)
-                    if imgs and "error" not in imgs[0]:
-                        st.image(imgs[0]["bytes"], use_container_width=True)
-                else:
-                    st.image(info_bytes, use_container_width=True)
-                st.markdown(f"""
-                <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
-                  padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
-                  📄 <b>{info_fi['filename']}</b> &nbsp;·&nbsp;
-                  <span style="color:#7C3AED">{info_fi['size_kb']} KB</span> &nbsp;·&nbsp;
-                  {info_fi['extension'].upper()}
-                </div>""", unsafe_allow_html=True)
+                chip_col, view_col = st.columns([4, 1])
+                with chip_col:
+                    st.markdown(f"""
+                    <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
+                      padding:.5rem .8rem;font-size:.85rem;margin:.4rem 0">
+                      📄 <b>{info_fi['filename']}</b>
+                      <span style="color:#7C3AED">· {info_fi['size_kb']} KB</span>
+                    </div>""", unsafe_allow_html=True)
+                with view_col:
+                    with st.popover("👁 보기", use_container_width=True):
+                        if info_fi["is_pdf"]:
+                            imgs = pdf_to_images(info_bytes)
+                            if imgs and "error" not in imgs[0]:
+                                st.image(imgs[0]["bytes"], use_container_width=True)
+                        else:
+                            st.image(info_bytes, use_container_width=True)
 
                 if st.session_state.get("check_barcode", True) and info_fi["is_image"]:
                     with st.spinner("바코드 감지 중..."):
@@ -408,25 +415,48 @@ if menu == "표기사항 검수":
             if design_uploaded:
                 design_bytes = design_uploaded.getvalue()
                 design_fi = get_file_info(design_bytes, design_uploaded.name)
-                if design_fi["is_pdf"]:
-                    imgs = pdf_to_images(design_bytes)
-                    if imgs and "error" not in imgs[0]:
-                        st.image(imgs[0]["bytes"], use_container_width=True)
-                else:
-                    st.image(design_bytes, use_container_width=True)
-                st.markdown(f"""
-                <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
-                  padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
-                  📄 <b>{design_fi['filename']}</b> &nbsp;·&nbsp;
-                  <span style="color:#7C3AED">{design_fi['size_kb']} KB</span> &nbsp;·&nbsp;
-                  {design_fi['extension'].upper()}
-                </div>""", unsafe_allow_html=True)
+                dchip_col, dview_col = st.columns([4, 1])
+                with dchip_col:
+                    st.markdown(f"""
+                    <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
+                      padding:.5rem .8rem;font-size:.85rem;margin:.4rem 0">
+                      📄 <b>{design_fi['filename']}</b>
+                      <span style="color:#7C3AED">· {design_fi['size_kb']} KB</span>
+                    </div>""", unsafe_allow_html=True)
+                with dview_col:
+                    with st.popover("👁 보기", use_container_width=True):
+                        if design_fi["is_pdf"]:
+                            imgs = pdf_to_images(design_bytes)
+                            if imgs and "error" not in imgs[0]:
+                                st.image(imgs[0]["bytes"], use_container_width=True)
+                        else:
+                            st.image(design_bytes, use_container_width=True)
             else:
                 st.markdown("""
                 <div style="height:180px;display:flex;align-items:center;justify-content:center;
                   background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
                   <div style="font-size:2.5rem">🎨</div>
                   <div style="font-size:.88rem">승인된 디자인 시안이 있다면 업로드해주세요 (선택)</div>
+                </div>""", unsafe_allow_html=True)
+
+    if "result" in st.session_state:
+        _top_result = st.session_state["result"]
+        _top_score = _top_result.get("overall_score", 0)
+        _top_sc = "score-high" if _top_score >= 80 else "score-mid" if _top_score >= 60 else "score-low"
+        _top_grade = "우수" if _top_score >= 80 else "보통" if _top_score >= 60 else "미흡"
+        _top_color = "#22C55E" if _top_score >= 80 else "#F59E0B" if _top_score >= 60 else "#F43F5E"
+        with st.container(key="card_summary_top"):
+            sc1, sc2 = st.columns([1, 3])
+            with sc1:
+                st.markdown(f"""
+                <div class="score-card {_top_sc}" style="padding:.8rem;">
+                  <div class="score-num" style="font-size:2.2rem;color:{_top_color}">{_top_score}</div>
+                  <div style="font-size:.85rem;font-weight:600;color:{_top_color};margin-top:.2rem">{_top_grade}</div>
+                </div>""", unsafe_allow_html=True)
+            with sc2:
+                st.markdown(f"""
+                <div class="summary-box" style="margin:0;height:100%;display:flex;align-items:center;">
+                  💬 <b>검수 요약:</b> {_top_result.get('summary','')}
                 </div>""", unsafe_allow_html=True)
 
     with st.container(key="card_start"):
@@ -477,25 +507,8 @@ if menu == "표기사항 검수":
     if "result" in st.session_state:
         result = st.session_state["result"]
         fi = st.session_state["fi"]
-        score = result.get("overall_score", 0)
-        sc = "score-high" if score >= 80 else "score-mid" if score >= 60 else "score-low"
-        grade = "우수" if score >= 80 else "보통" if score >= 60 else "미흡"
-        score_color = "#22C55E" if score >= 80 else "#F59E0B" if score >= 60 else "#F43F5E"
 
         st.markdown("---")
-        _, c2, _ = st.columns([1,2,1])
-        with c2:
-            st.markdown(f"""
-            <div class="score-card {sc}">
-              <div class="score-num" style="color:{score_color}">{score}</div>
-              <div style="font-size:1.1rem;font-weight:600;color:{score_color};margin:.3rem 0">{grade}</div>
-              <div style="font-size:.8rem;color:#888">100점 만점 종합 점수</div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class="summary-box">
-          💬 <b>검수 요약:</b> {result.get('summary','')}
-        </div>""", unsafe_allow_html=True)
 
         field_names = {
             "product_name":"제품명","manufacturer":"제조자/수입자","content_weight":"내용량",
