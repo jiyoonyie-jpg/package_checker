@@ -32,13 +32,12 @@ footer {visibility: hidden;}
 [data-testid="stStatusWidget"] {display: none !important;}
 .stDeployButton {display: none !important;}
 
-/* 헤더 투명화 (토글 버튼 영역은 살림) */
+/* 네이티브 헤더 완전히 제거 — 커스텀 헤더가 최상단에 오도록 */
 header[data-testid="stHeader"] {
-    background: transparent !important;
-    box-shadow: none !important;
-    height: 3rem !important;
+    display: none !important;
 }
-/* 사이드바 토글 버튼 강제 표시 */
+
+/* 사이드바 항상 고정 — 접기/펼치기 기능 제거 */
 [data-testid="collapsedControl"],
 section[data-testid="stSidebarCollapsedControl"],
 .st-emotion-cache-1lna757,
@@ -46,10 +45,25 @@ button[title="Collapse sidebar"],
 button[title="Expand sidebar"],
 button[aria-label="Collapse sidebar"],
 button[aria-label="Expand sidebar"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 9999 !important;
+    display: none !important;
+}
+[data-testid="stSidebarResizeHandle"] {
+    pointer-events: none !important;
+}
+[data-testid="stSidebar"] {
+    min-width: 280px !important;
+}
+
+/* 상단 여백 제거 — 커스텀 헤더가 화면 맨 위에 붙도록 */
+.main .block-container,
+[data-testid="stAppViewContainer"] .main .block-container,
+[data-testid="stMainBlockContainer"],
+div.block-container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+[data-testid="stAppViewContainer"] {
+    padding-top: 0 !important;
 }
 
 /* 사이드바 — 그라디언트 + 노이즈 텍스처 */
@@ -354,80 +368,126 @@ menu = st.session_state.get("menu", "표기사항 검수")
 # 페이지 1 — 표기사항 검수
 # ══════════════════════════════════════════════════════════
 if menu == "표기사항 검수":
-    col_up, col_pre = st.columns([1, 1], gap="medium")
+    col_info, col_design = st.columns([1, 1], gap="medium")
 
-    with col_up:
+    with col_info:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("##### 📁 파일 업로드")
-        uploaded = st.file_uploader("PDF 또는 이미지를 업로드하세요",
-            type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB",
-            label_visibility="collapsed")
+        st.markdown("##### 📋 정보표시면 업로드")
+        info_uploaded = st.file_uploader("정보표시면 (필수)",
+            type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 원재료명/영양성분표 등 표기 이미지",
+            label_visibility="collapsed", key="info_uploader")
 
-        if uploaded:
-            file_bytes = uploaded.read()
-            fi = get_file_info(file_bytes, uploaded.name)
+        if info_uploaded:
+            info_bytes = info_uploaded.getvalue()
+            info_fi = get_file_info(info_bytes, info_uploaded.name)
+            if info_fi["is_pdf"]:
+                imgs = pdf_to_images(info_bytes)
+                if imgs and "error" not in imgs[0]:
+                    st.image(imgs[0]["bytes"], use_container_width=True)
+            else:
+                st.image(info_bytes, use_container_width=True)
             st.markdown(f"""
             <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
               padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
-              📄 <b>{fi['filename']}</b> &nbsp;·&nbsp;
-              <span style="color:#7C3AED">{fi['size_kb']} KB</span> &nbsp;·&nbsp;
-              {fi['extension'].upper()}
+              📄 <b>{info_fi['filename']}</b> &nbsp;·&nbsp;
+              <span style="color:#7C3AED">{info_fi['size_kb']} KB</span> &nbsp;·&nbsp;
+              {info_fi['extension'].upper()}
             </div>""", unsafe_allow_html=True)
 
-            if st.session_state.get("check_barcode", True) and fi["is_image"]:
+            if st.session_state.get("check_barcode", True) and info_fi["is_image"]:
                 with st.spinner("바코드 감지 중..."):
-                    barcodes = detect_barcodes(file_bytes)
+                    barcodes = detect_barcodes(info_bytes)
                     if barcodes and "error" not in barcodes[0]:
                         st.success(f"✅ 바코드 {len(barcodes)}개 감지됨")
                         for bc in barcodes:
                             st.code(f"{bc['type']}: {bc['data']}")
                     else:
                         st.info("바코드 자동 감지 불가 (AI가 직접 확인)")
-
-            if st.button("🚀 검수 시작", type="primary", use_container_width=True):
-                if not os.environ.get("GEMINI_API_KEY"):
-                    st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
-                else:
-                    with st.spinner("Gemini AI가 분석 중입니다..."):
-                        try:
-                            et = st.session_state.get("export_type", "내수용 (국내)")
-                            ec = st.session_state.get("extra_context", "")
-                            ctx = f"[수출 구분: {et}]" + (f" {ec}" if ec else "")
-                            if fi["is_pdf"]:
-                                pages = pdf_to_images(file_bytes)
-                                result = analyze_pdf_pages(pages, ctx)
-                            else:
-                                mt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
-                                      "png":"image/png","webp":"image/webp"}.get(fi["extension"],"image/png")
-                                result = analyze_image_with_gemini(image_to_base64(file_bytes, mt), mt, ctx)
-                            st.session_state.update({"result": result, "fi": fi,
-                                "file_bytes": file_bytes, "is_pdf": fi["is_pdf"]})
-                            st.success("✅ 검수 완료!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"오류: {e}")
+        else:
+            st.markdown("""
+            <div style="height:180px;display:flex;align-items:center;justify-content:center;
+              background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
+              <div style="font-size:2.5rem">📋</div>
+              <div style="font-size:.88rem">원재료명/영양성분표 등 정보표시면을 업로드해주세요</div>
+            </div>""", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with col_pre:
-        st.markdown('<div class="card" style="min-height:200px">', unsafe_allow_html=True)
-        st.markdown("##### 🖼️ 미리보기")
-        if "file_bytes" in st.session_state:
-            if st.session_state.get("is_pdf"):
-                imgs = pdf_to_images(st.session_state["file_bytes"])
+    with col_design:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("##### 🎨 디자인 시안 업로드 (선택)")
+        design_uploaded = st.file_uploader("디자인 시안 (선택)",
+            type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 승인된 디자인 시안과 비교 검증",
+            label_visibility="collapsed", key="design_uploader")
+
+        if design_uploaded:
+            design_bytes = design_uploaded.getvalue()
+            design_fi = get_file_info(design_bytes, design_uploaded.name)
+            if design_fi["is_pdf"]:
+                imgs = pdf_to_images(design_bytes)
                 if imgs and "error" not in imgs[0]:
                     st.image(imgs[0]["bytes"], use_container_width=True)
             else:
-                st.image(st.session_state["file_bytes"], use_container_width=True)
-        elif uploaded and fi.get("is_image"):
-            st.image(file_bytes, use_container_width=True)
+                st.image(design_bytes, use_container_width=True)
+            st.markdown(f"""
+            <div style="background:#FAF5FF;border:1px solid #DDD6FE;border-radius:10px;
+              padding:.6rem 1rem;font-size:.88rem;margin:.5rem 0">
+              📄 <b>{design_fi['filename']}</b> &nbsp;·&nbsp;
+              <span style="color:#7C3AED">{design_fi['size_kb']} KB</span> &nbsp;·&nbsp;
+              {design_fi['extension'].upper()}
+            </div>""", unsafe_allow_html=True)
         else:
             st.markdown("""
-            <div style="height:200px;display:flex;align-items:center;justify-content:center;
+            <div style="height:180px;display:flex;align-items:center;justify-content:center;
               background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
-              <div style="font-size:2.5rem">📦</div>
-              <div style="font-size:.88rem">파일을 업로드해주세요</div>
+              <div style="font-size:2.5rem">🎨</div>
+              <div style="font-size:.88rem">승인된 디자인 시안이 있다면 업로드해주세요 (선택)</div>
             </div>""", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    if st.button("🚀 검수 시작", type="primary", use_container_width=True):
+        if not info_uploaded:
+            st.error("📋 정보표시면 파일을 먼저 업로드해주세요.")
+        elif not os.environ.get("GEMINI_API_KEY"):
+            st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
+        else:
+            with st.spinner("Gemini AI가 분석 중입니다..."):
+                try:
+                    info_bytes = info_uploaded.getvalue()
+                    info_fi = get_file_info(info_bytes, info_uploaded.name)
+                    et = st.session_state.get("export_type", "내수용 (국내)")
+                    ec = st.session_state.get("extra_context", "")
+                    ctx = f"[수출 구분: {et}]" + (f" {ec}" if ec else "")
+
+                    design_b64, design_mt = None, None
+                    if design_uploaded:
+                        design_bytes = design_uploaded.getvalue()
+                        design_fi = get_file_info(design_bytes, design_uploaded.name)
+                        if design_fi["is_pdf"]:
+                            dpages = pdf_to_images(design_bytes)
+                            if dpages and "error" not in dpages[0]:
+                                design_b64, design_mt = dpages[0]["base64"], "image/png"
+                        else:
+                            dmt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
+                                   "png":"image/png","webp":"image/webp"}.get(design_fi["extension"],"image/png")
+                            design_b64, design_mt = image_to_base64(design_bytes, dmt), dmt
+
+                    if info_fi["is_pdf"]:
+                        pages = pdf_to_images(info_bytes)
+                        result = analyze_pdf_pages(pages, ctx, design_b64, design_mt)
+                    else:
+                        mt = {"jpg":"image/jpeg","jpeg":"image/jpeg",
+                              "png":"image/png","webp":"image/webp"}.get(info_fi["extension"],"image/png")
+                        result = analyze_image_with_gemini(image_to_base64(info_bytes, mt), mt, ctx, design_b64, design_mt)
+
+                    st.session_state.update({"result": result, "fi": info_fi,
+                        "file_bytes": info_bytes, "is_pdf": info_fi["is_pdf"],
+                        "has_design": design_uploaded is not None})
+                    st.success("✅ 검수 완료!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"오류: {e}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── 결과 ────────────────────────────────────────────────
     if "result" in st.session_state:
@@ -504,6 +564,17 @@ if menu == "표기사항 검수":
                       <div style="font-size:.78rem;font-weight:600">💡 {w.get('field','')}</div>
                       <div style="margin-top:.2rem">{w.get('message','')}</div>
                     </div>""", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        if st.session_state.get("has_design") and result.get("design_consistency"):
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.markdown(f"##### 🔍 디자인 시안 대비 일치성 ({len(result['design_consistency'])}건)")
+            for d in result["design_consistency"]:
+                st.markdown(f"""
+                <div class="violation-card v-warn">
+                  <div style="font-size:.78rem;font-weight:600">🔍 {d.get('item','')}</div>
+                  <div style="margin-top:.2rem">{d.get('issue','')}</div>
+                </div>""", unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("##### 📥 내보내기")
