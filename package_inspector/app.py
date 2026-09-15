@@ -189,8 +189,13 @@ div[class*="st-key-card_"] {
     padding: 1.2rem 1.4rem;
     margin-bottom: 1rem;
     box-shadow: 0 4px 18px rgba(98,84,163,0.08);
-    width: 100% !important;
     box-sizing: border-box !important;
+}
+
+/* 컬럼이 내부 콘텐츠(파일 업로더 등)의 최소 너비 때문에
+   비율을 무시하고 넘치지 않도록 함 — flex/grid 오버플로 방지 */
+[data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: 0 !important;
 }
 
 /* 점수 카드 */
