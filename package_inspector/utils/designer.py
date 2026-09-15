@@ -5,7 +5,9 @@ import requests
 from google import genai
 
 MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"]
-HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+
+# HF 신규 Router API 주소
+HF_API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
 
 def _gemini_text(prompt: str) -> str:
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
@@ -56,14 +58,14 @@ def generate_package_design(user_input: str, seed: int = 42) -> dict:
         }
         resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
 
-        # 모델 로딩 중일 때 재시도
+        # 모델 로딩 중(503)이면 20초 대기 후 재시도
         if resp.status_code == 503:
             import time
             time.sleep(20)
             resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
 
         if resp.status_code != 200:
-            return {"error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+            return {"error": f"HTTP {resp.status_code}: {resp.text[:300]}"}
 
         img_bytes = resp.content
         if img_bytes[:1] == b"{":
