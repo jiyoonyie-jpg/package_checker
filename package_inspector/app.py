@@ -67,7 +67,7 @@ div.block-container {
     border: 3px solid #C289BA !important;
     border-radius: 12px !important;
     padding: 0 1.2rem 1.2rem !important;
-    margin: 0 !important;
+    margin: 0 1.5rem !important;
     overflow: hidden !important;
 }
 
@@ -452,8 +452,8 @@ with st.container(key="app_frame"):
 
         with col_design:
             with st.container(key="card_design_upload"):
-                st.markdown("##### 🎨 디자인 시안 업로드 (선택)")
-                design_uploaded = st.file_uploader("디자인 시안 (선택)",
+                st.markdown("##### 🎨 디자인 시안 업로드")
+                design_uploaded = st.file_uploader("디자인 시안",
                     type=["pdf","png","jpg","jpeg","webp"], help="최대 50MB · 승인된 디자인 시안과 비교 검증",
                     label_visibility="collapsed", key="design_uploader")
 
@@ -481,7 +481,7 @@ with st.container(key="app_frame"):
                     <div style="height:180px;display:flex;align-items:center;justify-content:center;
                       background:#FAF5FF;border-radius:12px;color:#A78BFA;flex-direction:column;gap:8px">
                       <div style="font-size:2.5rem">🎨</div>
-                      <div style="font-size:.88rem">승인된 디자인 시안이 있다면 업로드해주세요 (선택)</div>
+                      <div style="font-size:.88rem">승인된 디자인 시안을 업로드해주세요</div>
                     </div>""", unsafe_allow_html=True)
 
         if "result" in st.session_state:
@@ -508,6 +508,8 @@ with st.container(key="app_frame"):
             if st.button("🚀 검수 시작", type="primary", use_container_width=True):
                 if not info_uploaded:
                     st.error("📋 정보표시면 파일을 먼저 업로드해주세요.")
+                elif not design_uploaded:
+                    st.error("🎨 디자인 시안 파일을 먼저 업로드해주세요.")
                 elif not os.environ.get("GEMINI_API_KEY"):
                     st.error("⚙️ 우측 상단 설정에서 API Key를 입력해주세요.")
                 else:
