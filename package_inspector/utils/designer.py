@@ -1,13 +1,11 @@
 import os
 import base64
-import json
-import requests
+import urllib.parse
+import urllib.request
 from google import genai
 
 MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"]
-
-# HF 신규 Router API 주소
-HF_API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
+POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{prompt}?width=1024&height=640&nologo=true&model=flux&seed={seed}"
 
 def _gemini_text(prompt: str) -> str:
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
@@ -32,9 +30,6 @@ def translate_to_english(user_input: str) -> str:
         return f"product packaging design, {user_input}, studio white background"
 
 def generate_package_design(user_input: str, seed: int = 42) -> dict:
-    hf_token = os.environ.get("HF_TOKEN", "")
-    if not hf_token:
-        return {"error": "HF_TOKEN이 설정되지 않았습니다. Streamlit Secrets에 추가해주세요."}
     try:
         eng_prompt = translate_to_english(user_input)
         full_prompt = (
@@ -42,36 +37,11 @@ def generate_package_design(user_input: str, seed: int = 42) -> dict:
             f"clean white studio background, high resolution, sharp details, "
             f"no people, commercial grade product photography"
         )
-        headers = {
-            "Authorization": f"Bearer {hf_token}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "inputs": full_prompt,
-            "parameters": {
-                "num_inference_steps": 30,
-                "guidance_scale": 7.5,
-                "width": 1024,
-                "height": 640,
-                "seed": seed,
-            }
-        }
-        resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
-
-        # 모델 로딩 중(503)이면 20초 대기 후 재시도
-        if resp.status_code == 503:
-            import time
-            time.sleep(20)
-            resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
-
-        if resp.status_code != 200:
-            return {"error": f"HTTP {resp.status_code}: {resp.text[:300]}"}
-
-        img_bytes = resp.content
-        if img_bytes[:1] == b"{":
-            err = json.loads(img_bytes)
-            return {"error": err.get("error", str(err))}
-
+        encoded = urllib.parse.quote(full_prompt)
+        url = POLLINATIONS_URL.format(prompt=encoded, seed=seed)
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            img_bytes = resp.read()
         return {
             "image_b64": base64.b64encode(img_bytes).decode("utf-8"),
             "mime_type": "image/jpeg",
