@@ -1,13 +1,10 @@
 import os
 import base64
-import urllib.request
-import urllib.parse
 import json
+import requests
 from google import genai
 
 MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"]
-
-# Hugging Face SDXL 모델
 HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
 
 def _gemini_text(prompt: str) -> str:
@@ -36,17 +33,18 @@ def generate_package_design(user_input: str, seed: int = 42) -> dict:
     hf_token = os.environ.get("HF_TOKEN", "")
     if not hf_token:
         return {"error": "HF_TOKEN이 설정되지 않았습니다. Streamlit Secrets에 추가해주세요."}
-
     try:
         eng_prompt = translate_to_english(user_input)
         full_prompt = (
-            f"{eng_prompt}, "
-            f"professional product packaging design, commercial grade, "
+            f"{eng_prompt}, professional product packaging design, "
             f"clean white studio background, high resolution, sharp details, "
-            f"no people, product photography style"
+            f"no people, commercial grade product photography"
         )
-
-        payload = json.dumps({
+        headers = {
+            "Authorization": f"Bearer {hf_token}",
+            "Content-Type": "application/json",
+        }
+        payload = {
             "inputs": full_prompt,
             "parameters": {
                 "num_inference_steps": 30,
@@ -55,21 +53,19 @@ def generate_package_design(user_input: str, seed: int = 42) -> dict:
                 "height": 640,
                 "seed": seed,
             }
-        }).encode("utf-8")
+        }
+        resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
 
-        req = urllib.request.Request(
-            HF_API_URL,
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {hf_token}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            img_bytes = resp.read()
+        # 모델 로딩 중일 때 재시도
+        if resp.status_code == 503:
+            import time
+            time.sleep(20)
+            resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
 
-        # 오류 응답 체크 (JSON이면 에러)
+        if resp.status_code != 200:
+            return {"error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+
+        img_bytes = resp.content
         if img_bytes[:1] == b"{":
             err = json.loads(img_bytes)
             return {"error": err.get("error", str(err))}
