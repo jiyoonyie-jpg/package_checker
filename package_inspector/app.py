@@ -659,6 +659,19 @@ if menu == "표기사항 검수":
                       <div style="margin-top:.2rem;color:#7C3AED">💡 제안: {t.get('suggestion','')}</div>
                     </div>""", unsafe_allow_html=True)
 
+        wc = result.get("weight_check") or {}
+        if wc.get("applicable"):
+            wc_ok = wc.get("match")
+            wc_class = "v-low" if wc_ok else "v-high"
+            wc_icon = "✅" if wc_ok else "🔴"
+            with st.container(key="card_weight_check"):
+                st.markdown("##### ⚖️ 내용량 계산 검증")
+                st.markdown(f"""
+                <div class="violation-card {wc_class}">
+                  <div style="font-size:.78rem;font-weight:600">{wc_icon} {wc.get('unit_weight','?')} × {wc.get('unit_count','?')} = {wc.get('expected_total','?')} (표시값: {wc.get('labeled_total','?')})</div>
+                  <div style="margin-top:.2rem">{wc.get('note','')}</div>
+                </div>""", unsafe_allow_html=True)
+
         st.markdown("##### 📥 내보내기")
         d1, d2, d3 = st.columns(3)
         with d1:
