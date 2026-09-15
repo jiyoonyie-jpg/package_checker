@@ -307,20 +307,6 @@ elif menu == "패키지 디자인 생성":
     st.markdown("#### 🎨 패키지 디자인 AI 생성")
     st.markdown("원하는 패키지 디자인을 자유롭게 설명해주세요. AI가 이미지를 생성합니다.")
 
-    example_prompts = [
-        "가로로 긴 직사각형 인스턴트 커피 패키지, 기본 색상 노란색, 포인트 보라색",
-        "원통형 과자 패키지, 민트색 배경에 흰색 로고, 프리미엄 느낌",
-        "슬림한 초코바 패키지, 다크초콜릿 브라운과 골드 색상",
-        "정사각형 녹차 음료 패키지, 연두색 그라디언트, 일본 감성",
-        "파우치형 스낵 패키지, 빨간색 배경, 귀여운 캐릭터 스타일",
-    ]
-    st.markdown("**빠른 예시:**")
-    cols_chip = st.columns(len(example_prompts))
-    for i, ep in enumerate(example_prompts):
-        with cols_chip[i]:
-            if st.button(ep[:15] + "...", key=f"chip_{i}", use_container_width=True):
-                st.session_state["design_prompt"] = ep
-
     st.markdown("---")
 
     design_input = st.text_area(
