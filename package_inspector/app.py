@@ -346,17 +346,6 @@ with st.sidebar:
         check_barcode = st.checkbox("바코드 자동 감지", value=True, key="check_barcode")
         extra_context = st.text_area("추가 지시사항", height=70,
             placeholder="예: 유기농 인증 제품", key="extra_context")
-        st.markdown("---")
-        st.markdown("""
-        <div style='font-size:.78rem; opacity:.7; line-height:2'>
-        ✅ 제품명 / 식품유형<br>
-        ✅ 원재료명 및 함량<br>
-        ✅ 영양성분표<br>
-        ✅ 유통기한/소비기한<br>
-        ✅ 알레르기 유발물질<br>
-        ✅ 원산지 / 제조자<br>
-        ✅ 보관방법 / 바코드
-        </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
     with st.popover("⚙️ API / 설정", use_container_width=True):
