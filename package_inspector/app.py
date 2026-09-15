@@ -432,9 +432,9 @@ if menu == "표기사항 검수":
     with col_info:
         with st.container(key="card_info_upload"):
             st.markdown("##### 📋 정보표시면 업로드")
-            st.caption("정보표시면, 품목제조보고서 등 여러 문서를 함께 올리면 한 번에 분석합니다.")
             info_uploaded_list = st.file_uploader("정보표시면 (필수)",
-                type=["pdf","png","jpg","jpeg","webp","xlsx","xls"], help="최대 50MB · 원재료명/영양성분표/품목제조보고서 등 (엑셀 가능)",
+                type=["pdf","png","jpg","jpeg","webp","xlsx","xls"],
+                help="정보표시면, 품목제조보고서 등 여러 문서를 함께 올리면 한 번에 분석합니다. · 최대 50MB · 엑셀 가능",
                 label_visibility="collapsed", key="info_uploader", accept_multiple_files=True)
 
             if info_uploaded_list:
