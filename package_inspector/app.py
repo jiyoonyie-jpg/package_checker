@@ -54,8 +54,8 @@ header[data-testid="stHeader"] {
    중첩 컨테이너의 폭 계산에 좌우되지 않도록 함 */
 .main {
     background: #FFFFFF !important;
-    border: 3px solid #C289BA !important;
-    border-radius: 12px !important;
+    border: 8px solid #C289BA !important;
+    border-radius: 14px !important;
     margin: 0 1.5rem !important;
     overflow: hidden !important;
 }
@@ -189,6 +189,8 @@ div[class*="st-key-card_"] {
     padding: 1.2rem 1.4rem;
     margin-bottom: 1rem;
     box-shadow: 0 4px 18px rgba(98,84,163,0.08);
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* 점수 카드 */
