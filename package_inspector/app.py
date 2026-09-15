@@ -37,21 +37,32 @@ header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* 사이드바 항상 고정 — 접기/펼치기 기능 제거 */
+/* 사이드바 항상 펼쳐진 상태로 고정 — Streamlit이 접힌 상태로 바꿔도 강제로 무시 */
+[data-testid="stSidebar"] {
+    min-width: 280px !important;
+    width: 280px !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    visibility: visible !important;
+}
+[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: none !important;
+    margin-left: 0 !important;
+    min-width: 280px !important;
+    width: 280px !important;
+}
+
+/* 사이드바를 열고 닫는 버튼은 전부 숨김 (문구/이름 무관하게 "sidebar" 포함 버튼 전체 차단) */
 [data-testid="collapsedControl"],
 section[data-testid="stSidebarCollapsedControl"],
 .st-emotion-cache-1lna757,
-button[title="Collapse sidebar"],
-button[title="Expand sidebar"],
-button[aria-label="Collapse sidebar"],
-button[aria-label="Expand sidebar"] {
+button[title*="sidebar" i],
+button[aria-label*="sidebar" i] {
     display: none !important;
 }
 [data-testid="stSidebarResizeHandle"] {
     pointer-events: none !important;
-}
-[data-testid="stSidebar"] {
-    min-width: 280px !important;
+    display: none !important;
 }
 
 /* 상단 여백 제거 — 커스텀 헤더가 화면 맨 위에 붙도록 */
